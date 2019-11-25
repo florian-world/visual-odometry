@@ -1,5 +1,6 @@
 %% Setup
-ds = 2; % 0: KITTI, 1: Malaga, 2: parking
+ds = 1; % 0: KITTI, 1: Malaga, 2: parking
+malaga_path = '../data/malaga-urban-dataset-extract-07/';
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
@@ -34,6 +35,8 @@ end
 
 %% Bootstrap
 % need to set bootstrap_frames
+bootstrap_frames = [1 6];
+
 if ds == 0
     img0 = imread([kitti_path '/00/image_0/' ...
         sprintf('%06d.png',bootstrap_frames(1))]);
