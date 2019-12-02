@@ -32,3 +32,6 @@ octave-workspace
 
 # Ignore dataset
 data/malaga*
+data/*
+
+.DS_Store
