@@ -3,6 +3,8 @@ ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 malaga_path = '../data/malaga-urban-dataset-extract-07/';
 kitti_path = '../data/kitti/';
 
+global K
+
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
     assert(exist('kitti_path', 'var') ~= 0);
@@ -58,6 +60,8 @@ elseif ds == 2
 else
     assert(false);
 end
+
+initState = bootstrap(img0,img1);
 
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
