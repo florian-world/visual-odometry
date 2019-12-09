@@ -1,6 +1,6 @@
 function descriptors = describeKeyPoints(I_unfilt,u,v)
     % INPUT:
-    % I = r x c Image
+    % I_unfilt = r x c Image
     % u = Nx1
     % v = Nx1
     % (u,v) = keypoints pixel coordinates
@@ -16,6 +16,10 @@ function descriptors = describeKeyPoints(I_unfilt,u,v)
     % Pattern is generated randomly only once then the same pattern is
     % used for all patches
     global PATCHRADIUS
+    
+    u = round(u);
+    v = round(v);
+    
     I = imgaussfilt(I_unfilt,3,'FilterSize',9);
     % patch size
     patch_edge = (2*PATCHRADIUS+1);
@@ -38,10 +42,10 @@ function descriptors = describeKeyPoints(I_unfilt,u,v)
     u1 = reshape(u,1,1,size(u,1)).*ones(size(Rn));
     v1 = reshape(v,1,1,size(u,1)).*ones(size(Cn));
     % linear index for each element of each patch
-    ind = sub2ind(size(I),(u1+Rn),(v1+Cn));
+    ind = sub2ind(size(I),(v1+Cn),(u1+Rn));
     % array of patches
     parchArray = I(ind); 
-    % extending geneerated patern to all patches
+    % extending generated patern to all patches
     p_ind1 = repmat(pair_ind(:,1),1,size(u,1));
     p_ind2 = repmat(pair_ind(:,2),1,size(u,1));
     p_ind11 = p_ind1+ones(size(p_ind1)).*([0:size(u,1)-1]*patch_elements);

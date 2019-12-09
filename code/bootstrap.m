@@ -27,9 +27,13 @@ roi = [PATCHRADIUS+1,PATCHRADIUS+1,width-(2*PATCHRADIUS),height-(2*PATCHRADIUS)]
 corners1 = detectHarrisFeatures(Im1,'ROI',roi);
 corners2 = detectHarrisFeatures(Im2,'ROI',roi);
 
+% Describe Keypoints
+Desc1 = describeKeyPoints(Im1,corners1.Location(:,1),corners1.Location(:,2));
+Desc2 = describeKeyPoints(Im2,corners2.Location(:,1),corners2.Location(:,2));
+
 % Match keypoints by calculating BRIEF descriptors and matching
 % TODO: implement (Mambo)
-matches = matchDescriptors(corners1.Location, corners2.Location);
+matches = matchDescriptors(Desc1,Desc2,corners1.Location',corners2.Location');
 
 % Estimate relative pose between initial frames and create 3D pointcloud
 % Check if det(F) = 0, if not correct as in Ex. 6 (Simon)
