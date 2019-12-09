@@ -32,7 +32,6 @@ Desc1 = describeKeyPoints(Im1,corners1.Location(:,1),corners1.Location(:,2));
 Desc2 = describeKeyPoints(Im2,corners2.Location(:,1),corners2.Location(:,2));
 
 % Match keypoints by calculating BRIEF descriptors and matching
-% TODO: implement (Mambo)
 [Match1, Match2, Descriptors] = matchDescriptors(Desc1,Desc2,corners1.Location,corners2.Location);
 
 % Estimate relative pose between initial frames and create 3D pointcloud
