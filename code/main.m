@@ -3,7 +3,8 @@ ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 malaga_path = '../data/malaga-urban-dataset-extract-07/';
 kitti_path = '../data/kitti/';
 
-global K
+global K PATCHRADIUS
+PATCHRADIUS = 10;
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
