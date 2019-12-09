@@ -17,7 +17,7 @@ function State = bootstrap(Im1,Im2)
 %                                         candidate keypoints
 %           InitCandidatePoses:          [12xM] array containing M initial camera poses of first
 %                                         observation of candidate keypoints
-global K PATCHSIZE
+global K PATCHRADIUS
 
 % Detect corners on both frames
 % TODO: select only certain number of corners based on params (Simon)
