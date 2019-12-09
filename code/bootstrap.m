@@ -50,7 +50,7 @@ Keypoints = matches(2); %TODO: Check dimension, also of X
   
 State.Keypoints = Keypoints;
 State.Landmarks = Landmarks;
-State.Decriptors = Descriptors;
+State.Descriptors = Descriptors;
 % These state entries are not calculated during bootstrapping
 State.CandidateKeypoints = [];
 State.InitCandidateKeypoints = [];
