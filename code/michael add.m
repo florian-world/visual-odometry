@@ -5,7 +5,7 @@ degAdd=degtorad(degAdd);
 pxDeg=floor(degAdd/(2*atan(K(1,3)/(2*K(1,1))))/K(1,3));
 end
 
-function keyF=magicKeyF(p_W_landmarks,t_C_W,degAdd=0.0873)
+function [keyF,Tresh]=magicKeyF(p_W_landmarks,t_C_W,tresh=0.1,degAdd=0.0873)
 keyF=0;
 avgD=0
 lenD=length(p_W_landmarks);
@@ -14,7 +14,12 @@ for i=1:lenD
     avgD=avgD+D;
 end
 keyF=norm(t_C_W)/(avgD/lenD);
-end
+Tresh=false
+
+    if keyF<tresh
+        Tresh=true
+    end
+end 
 function nvec=UVtoRotVec(px,py,K,pxDegX,pxDegY=pxDegX)
 nx=(px-(K(1,3)/2))*pxDegX;
 ny=(py-(K(2,3)/2))*pxDegY;
