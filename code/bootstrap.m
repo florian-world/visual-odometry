@@ -9,13 +9,14 @@ function State = bootstrap(Im1,Im2)
 %   Output:
 %       State:  Struct that describes the state containing following
 %               fields:
-%           P:      [2xK] array containing K keypoint pairs
-%           X:      [3xK] array containging K landmark coordinates
-%           C:      [2xM] array containing M candidate keypoints
-%           F:      [2xM] array containing M initial observations of
-%                   candidate keypoints
-%           Tau:    [12xM] array containing M initial camera poses of first
-%                   observation of candidate keypoints
+%           Keypoints:                   [2xK] array containing K keypoint pairs
+%           Landmarks:                   [3xK] array containing K landmark coordinates
+%           Descriptors:                 [256xK] array containing K descriptors of previous frame
+%           CandidateKeypoints:          [2xM] array containing M candidate keypoints
+%           InitCandidateKeypoints:      [2xM] array containing M initial observations of
+%                                         candidate keypoints
+%           InitCandidatePoses:          [12xM] array containing M initial camera poses of first
+%                                         observation of candidate keypoints
 global K
 
 % Detect corners on both frames
@@ -43,16 +44,17 @@ p2 = matches(2); % TODO: These must be the homogeneous coords of the matches
 M1 = K * eye(3,4);
 M2 = K * [R, T];
 X_hom = linearTriangulation(p1,p2,M1,M2); % Output of this is homogenous
-X = X_hom(1:3,:);
+Landmarks = X_hom(1:3,:);
 
-P = matches(2); %TODO: Check dimension, also of X                      
+Keypoints = matches(2); %TODO: Check dimension, also of X                      
   
-State.P = P;
-State.X = X;
+State.Keypoints = Keypoints;
+State.Landmarks = Landmarks;
+State.Decriptors = Descriptors;
 % These state entries are not calculated during bootstrapping
-State.C = [];
-State.F = [];
-State.Tau = [];
+State.CandidateKeypoints = [];
+State.InitCandidateKeypoints = [];
+State.InitCadidatePoses = [];
 
 end
 
