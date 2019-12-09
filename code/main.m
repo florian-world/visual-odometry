@@ -1,6 +1,9 @@
 %% Setup
-ds = 1; % 0: KITTI, 1: Malaga, 2: parking
+ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 malaga_path = '../data/malaga-urban-dataset-extract-07/';
+kitti_path = '../data/kitti/';
+
+global K
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
@@ -35,7 +38,7 @@ end
 
 %% Bootstrap
 % need to set bootstrap_frames
-bootstrap_frames = [1 6];
+bootstrap_frames = [1 3]; % for kitti
 
 if ds == 0
     img0 = imread([kitti_path '/00/image_0/' ...
@@ -57,6 +60,8 @@ elseif ds == 2
 else
     assert(false);
 end
+
+initState = bootstrap(img0,img1);
 
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
