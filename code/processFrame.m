@@ -1,4 +1,4 @@
-function [prevState,curPose] = processFrame(prevState,image)
+function [curState,curPose] = processFrame(prevState,image)
 % main VO implemented here
 % prevState contains:
 %           Keypoints:                   [2xK] array containing K keypoint pairs
