@@ -12,7 +12,7 @@ function [M1, M2, D2] = matchDescriptors(d1,d2,l1,l2)
 %           D2: [256xM] matrix of descriptors of img2
 
 
-global MATCHING_LAMBDA
+global MATCHING_THRESHOLD
 
 [dists,matches] = pdist2(double(d1'),double(d2'),'hamming', 'Smallest', 1);
 
@@ -20,7 +20,8 @@ sorted_dists = sort(dists);
 sorted_dists = sorted_dists(sorted_dists~=0);
 min_non_zero_dist = sorted_dists(1);
 
-matches(dists >= MATCHING_LAMBDA * min_non_zero_dist) = 0;
+% matches(dists >= MATCHING_LAMBDA * min_non_zero_dist) = 0;
+matches(dists >= MATCHING_THRESHOLD) = 0;
 
 % remove double matches
 unique_matches = zeros(size(matches));
