@@ -1,6 +1,7 @@
 clear all;
 close all;
 %rng(1);
+keyF=0;
 
 % Create data for parts 1 and 2
 num_inliers = 20;
@@ -31,9 +32,9 @@ database_image = imread('../data/000000.png');
 % Dependencies
 addpath('plot');
 % Replace the following with the path to your DLT code:
-addpath('../../ex2/code');
+addpath('../../../2/code');
 % Replace the following with the path to your keypoint matcher code:
-addpath('../../ex3/code');
+addpath('../../../3/code');
 
 %% Part 1 - RANSAC with parabola model
 [best_guess_history, max_num_inliers_history] = ...
@@ -146,7 +147,7 @@ subplot(3, 1, 3);
 plot(max_num_inliers_history);
 title('Maximum inlier count over RANSAC iterations.');
 
-%% Part 4 - Same, for all frames
+ %% Part 4 - Same, for all frames
 
 figure(6);
 subplot(1, 3, 3);
@@ -156,6 +157,10 @@ view(0,0);
 axis equal;
 axis vis3d;
 axis([-15 10 -10 5 -1 40]);
+
+%tt=zeros(9,3);
+
+lenD=length(p_W_landmarks);
 for i = 0:9
     query_image = imread(sprintf('../data/%06d.png',i));
     
@@ -173,6 +178,27 @@ for i = 0:9
 
     % Drop unmatched keypoints and get 3d landmarks for the matched ones.
     matched_query_keypoints = query_keypoints(:, all_matches > 0);
+    
+    %%% candidate
+    if length(candidate_database_descriptors)>0
+       last_u_q_p=unmatched_query_keypoints;
+       last_u_q_d=unmatched_query_descriptor;   
+    end
+    unmatched_query_keypoints = setdiff(matched_query_keypoints,query_keypoints,'rows',"stable");
+    unmatched_query_descriptors=query_descriptor(:, all_matches == 0);
+    if length(candidate_database_descriptors)>0
+        c_q_descriptors=union(candidate_database_descriptors,unmatched_query_descriptors,'stable');
+        c_q_keypoints=union(candidate_database_keypoints,unmatched_query_keypoints,'stable');
+        c_q_rot=union(candidate_database_rot,quaternion(zeros(length(unmatched_query_keypoints),4)),'stable');
+        c_q_px=union(
+    candidate_matches=matchDescriptors(unmatched_query_descriptors,c_q_descriptors,match_lambda);
+    corresponding_cadidates= candidate_matches(candidate_matches> 0);
+    corresponding_candidates_keypoints=c_q_keypoints(:, corresponding_candidates);
+    corresponding_candidates_descriptors=c_q_descriptors(:, corresponding_candidates);
+    corresponding_candidates_rot=c_q_rot(:, corresponding_candidates);
+    corresponding_candidates_rot(:,corresponding_candidates_rot~=0)=quaternion(R_C_W,'rotmat','frame');
+    end
+    %%%
     corresponding_matches = all_matches(all_matches > 0);
     corresponding_landmarks = p_W_landmarks(:, corresponding_matches);
 
@@ -186,14 +212,34 @@ for i = 0:9
     % Distinguish success from failure.
     if (numel(R_C_W) > 0)
         subplot(1, 3, 3);
-        plotCoordinateFrame(R_C_W', -R_C_W'*t_C_W, 2);
+        orig=-R_C_W'*t_C_W;
+        plotCoordinateFrame(R_C_W', orig, 2);
         disp(['Frame ' num2str(i) ' localized with ' ...
             num2str(nnz(inlier_mask)) ' inliers!']);
         view(0,0);
+        %tt(i+1,:)=t_C_W'
+        
+    %%% rule of thumb
+    % norm(position-point)/norm(sum(t_C_W)
+        
+        avgD=0;
+        for i=1:length(p_W_landmarks)
+            D=norm(p_W_landmarks(:,i)+t_C_W');
+            avgD=avgD+D;
+        end
+        keyF=norm(t_C_W)/(avgD/lenD)
+        
+    %%%
+    
     else
         disp(['Frame ' num2str(i) ' failed to localize!']);
+          
     end
     
+
+    
+    
+  
     subplot(1, 3, [1 2]);
     imshow(query_image);
     hold on;
@@ -207,6 +253,14 @@ for i = 0:9
         matched_query_keypoints(:, inlier_mask>0), ...
         keypoints);
     hold off;
+    %matched_query_keypoints(:, (inlier_mask)>0)
     title('Inlier and outlier matches');
     pause(0.01);
 end
+% avgD=0;
+% lenD=length(p_W_landmarks);
+% for i=1:length(p_W_landmarks)
+%  D=norm(p_W_landmarks(:,i)-[0.2812,-0.0756,-6.7810]);
+% avgD=avgD+D;
+% end
+% norm(t_C_W)/(avgD/lenD)
