@@ -1,25 +1,34 @@
-%degAdd=5;
+function isKF =isKeyFrame(landmarks,curTranslation)
+%ISKEYFRAME determines if current frame is a keyframe
+%   
+%   Input:
+%       landmarks:    [3xK] array containing K landmark coordinates
+%       curTranslation:    [3x1] velocity? TODO
+%
+%   Output:
+%       isKF: bool if current frame should be treated as a new keyframe
+
+global MAGIC_KEYFRAME_THRESHOLD MAGIC_KEYFRAME_ANGLE_RAD
+avgD=0;
+lenD=length(landmarks);
+for i=1:lenD
+    D=norm(landmarks(:,i)+curTranslation');
+    avgD=avgD+D;
+end
+keyF=norm(curTranslation)/(avgD/lenD);
+isKF=false;
+
+    if keyF<MAGIC_KEYFRAME_THRESHOLD
+        isKF=true;
+    end
+end 
 
 function pxDeg=px2Deg(K,degAdd=5)
 degAdd=degtorad(degAdd);
 pxDeg=floor(degAdd/(2*atan(K(1,3)/(2*K(1,1))))/K(1,3));
 end
 
-function [keyF,Tresh]=magicKeyF(p_W_landmarks,t_C_W,tresh=0.1,degAdd=0.0873)
-keyF=0;
-avgD=0
-lenD=length(p_W_landmarks);
-for i=1:lenD
-    D=norm(p_W_landmarks(:,i)+t_C_W');
-    avgD=avgD+D;
-end
-keyF=norm(t_C_W)/(avgD/lenD);
-Tresh=false
 
-    if keyF<tresh
-        Tresh=true
-    end
-end 
 function nvec=UVtoRotVec(px,py,K,pxDegX,pxDegY=pxDegX)
 nx=(px-(K(1,3)/2))*pxDegX;
 ny=(py-(K(2,3)/2))*pxDegY;
