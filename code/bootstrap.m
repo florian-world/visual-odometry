@@ -33,27 +33,27 @@ Desc2 = describeKeyPoints(Im2,corners2.Location(:,1),corners2.Location(:,2));
 
 % Match keypoints by calculating BRIEF descriptors and matching
 % TODO: implement (Mambo)
-matches = matchDescriptors(Desc1,Desc2,corners1.Location',corners2.Location');
+[Match1, Match2, Descriptors] = matchDescriptors(Desc1,Desc2,corners1.Location,corners2.Location);
 
 % Estimate relative pose between initial frames and create 3D pointcloud
 % Check if det(F) = 0, if not correct as in Ex. 6 (Simon)
-F = estimateFundamentalMatrix(matches(1), matches(2), 'Method', ...
+F = estimateFundamentalMatrix(Match1, Match2, 'Method', ...
                               'RANSAC', 'NumTrials', 2000);
                  
 % Recover essential matrix from F, then decompose into R,T
 E = K'*F*K;
 [Rots,u3] = decomposeEssentialMatrix(E);
-p1 = matches(1); % TODO: These must be the homogeneous coords of the matches
-p2 = matches(2); % TODO: These must be the homogeneous coords of the matches
-[R,T] = disambiguateRelativePose(Rots,u3,p1,p2,K,K);
+Match1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
+Match2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
+[R,T] = disambiguateRelativePose(Rots,u3,Match1',Match2',K,K);
 
 % Triangulate points to create pointcloud
 M1 = K * eye(3,4);
 M2 = K * [R, T];
-X_hom = linearTriangulation(p1,p2,M1,M2); % Output of this is homogenous
+X_hom = linearTriangulation(Match1',Match2',M1,M2); % Output of this is homogenous
 Landmarks = X_hom(1:3,:);
 
-Keypoints = matches(2); %TODO: Check dimension, also of X                      
+Keypoints = Match2(:,1:2)'; %TODO: Check dimension, also of X                      
   
 State.Keypoints = Keypoints;
 State.Landmarks = Landmarks;
