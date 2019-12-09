@@ -16,7 +16,7 @@ function descriptors = describeKeyPoints(I_unfilt,u,v)
     % Pattern is generated randomly only once then the same pattern is
     % used for all patches
     global PATCHRADIUS
-    I = imgaussfilt(I_unfilt,3);
+    I = imgaussfilt(I_unfilt,3,'FilterSize',9);
     % patch size
     patch_edge = (2*PATCHRADIUS+1);
     patch_elements = patch_edge^2;
