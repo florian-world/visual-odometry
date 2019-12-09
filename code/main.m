@@ -63,8 +63,22 @@ end
 
 initState = bootstrap(img0,img1);
 
+% prepare for continuos operation
+state = initState;
+
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
+% visualization stuff
+figure(1);
+subplot(1, 3, 3);
+% scatter3(p_W_landmarks(1, :), p_W_landmarks(2, :), p_W_landmarks(3, :), 5);
+set(gcf, 'GraphicsSmoothing', 'on');
+view(0,0);
+axis equal;
+axis vis3d;
+axis([-15 10 -10 5 -1 40]);
+
+
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
     if ds == 0
@@ -79,8 +93,27 @@ for i = range
     else
         assert(false);
     end
+    
+    
+    [state, pose] = processFrame(state, image);
+    
+    subplot(1, 3, [1 2]);
+    imshow(image);
+    hold on;
+%     plot(matched_query_keypoints(2, (1-inlier_mask)>0), ...
+%         matched_query_keypoints(1, (1-inlier_mask)>0), 'rx', 'Linewidth', 2);
+%     if (nnz(inlier_mask) > 0)
+%         plot(matched_query_keypoints(2, (inlier_mask)>0), ...
+%             matched_query_keypoints(1, (inlier_mask)>0), 'gx', 'Linewidth', 2);
+%     end
+%     plotMatches(corresponding_matches(inlier_mask>0), ...
+%         matched_query_keypoints(:, inlier_mask>0), ...
+%         keypoints);
+    hold off;
+    title('Inlier and outlier matches');
+    
+    
     % Makes sure that plots refresh.    
     pause(0.01);
-    
-    prev_img = image;
+    prevImage = image;
 end
