@@ -1,4 +1,4 @@
-function [M1 M2] = matchDescriptors(d1,d2)
+function [M1, M2] = matchDescriptors(d1,d2,l1,l2)
 %MATCH DESCRIPTORS 
 %   Input:
 %           d1: [256xP] array containing P descriptors
