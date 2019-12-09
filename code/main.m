@@ -3,10 +3,10 @@ ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 malaga_path = '../data/malaga-urban-dataset-extract-07/';
 kitti_path = '../data/kitti/';
 
-global K PATCHRADIUS MATCHING_LAMBDA MAGIC_KEYFRAME_THRESHOLD ...
+global K PATCHRADIUS MATCHING_THRESHOLD MAGIC_KEYFRAME_THRESHOLD ...
     MAGIC_KEYFRAME_ANGLE_RAD
 PATCHRADIUS = 10;
-MATCHING_LAMBDA = 4;
+MATCHING_THRESHOLD = 0.05;
 MAGIC_KEYFRAME_THRESHOLD = 0.1;
 MAGIC_KEYFRAME_ANGLE_RAD = deg2rad(5);
 
@@ -71,17 +71,19 @@ initState = bootstrap(img0,img1);
 % prepare for continuos operation
 state = initState;
 
+trajectory = [0 0 0]; % x y z
+
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
 % visualization stuff
 figure(1);
 subplot(1, 3, 3);
-% scatter3(p_W_landmarks(1, :), p_W_landmarks(2, :), p_W_landmarks(3, :), 5);
+scatter3(state.Landmarks(1, :), state.Landmarks(2, :), state.Landmarks(3, :), 5);
 set(gcf, 'GraphicsSmoothing', 'on');
 view(0,0);
 axis equal;
 axis vis3d;
-axis([-15 10 -10 5 -1 40]);
+axis([-15 15 -10 10 -1 40]);
 
 
 for i = range
@@ -99,26 +101,50 @@ for i = range
         assert(false);
     end
     
+    prevKeypoints = state.Keypoints;
     
     [state, pose] = processFrame(state, image);
+    
+    
+    
+    t = -pose(:,4);
+    newpoint = trajectory(end,:) + t';
+    trajectory(end+1,:) = newpoint;
     
     subplot(1, 3, [1 2]);
     imshow(image);
     hold on;
-%     plot(matched_query_keypoints(2, (1-inlier_mask)>0), ...
-%         matched_query_keypoints(1, (1-inlier_mask)>0), 'rx', 'Linewidth', 2);
+    plot(state.Keypoints(1, :), state.Keypoints(2, :), 'rx', 'Linewidth', 2);
+    
+
 %     if (nnz(inlier_mask) > 0)
 %         plot(matched_query_keypoints(2, (inlier_mask)>0), ...
 %             matched_query_keypoints(1, (inlier_mask)>0), 'gx', 'Linewidth', 2);
 %     end
-%     plotMatches(corresponding_matches(inlier_mask>0), ...
-%         matched_query_keypoints(:, inlier_mask>0), ...
-%         keypoints);
+%     [~, query_indices, match_indices] = find(matches);
+% 
+%     x_from = query_keypoints(1, query_indices);
+%     x_to = database_keypoints(1, match_indices);
+%     y_from = query_keypoints(2, query_indices);
+%     y_to = database_keypoints(2, match_indices);
+%     plot([y_from; y_to], [x_from; x_to], 'g-', 'Linewidth', 3);
+    
     hold off;
     title('Inlier and outlier matches');
     
     
+    subplot(1, 3, 3);
+    hold on;
+    plot3(trajectory(end-1:end,1),trajectory(end-1:end,2),trajectory(end-1:end,3), 'Color', 'red', 'LineWidth', 3);
+    set(gcf, 'GraphicsSmoothing', 'on');
+    view(0,0);
+    axis equal;
+    axis vis3d;
+    axis([-15 15 -10 10 -1 40]);
+    hold off;
+    
+    
     % Makes sure that plots refresh.    
-    pause(0.01);
+    pause(1);
     prevImage = image;
 end
