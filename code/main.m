@@ -3,9 +3,12 @@ ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 malaga_path = '../data/malaga-urban-dataset-extract-07/';
 kitti_path = '../data/kitti/';
 
-global K PATCHRADIUS MATCHING_LAMBDA
+global K PATCHRADIUS MATCHING_LAMBDA MAGIC_KEYFRAME_THRESHOLD ...
+    MAGIC_KEYFRAME_ANGLE_RAD
 PATCHRADIUS = 10;
 MATCHING_LAMBDA = 5;
+MAGIC_KEYFRAME_THRESHOLD = 0.1;
+MAGIC_KEYFRAME_ANGLE_RAD = deg2rad(5);
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"

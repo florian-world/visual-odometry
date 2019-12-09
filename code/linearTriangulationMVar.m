@@ -1,6 +1,6 @@
-function P = linearTriangulation(p1,p2,M1,M2)
+function P = linearTriangulationMVar(p1,p2,M1,M2)
 % LINEARTRIANGULATION  Linear Triangulation
-%
+% mod version with variable M1
 % Input:
 %  - p1(3,N): homogeneous coordinates of points in image 1
 %  - p2(3,N): homogeneous coordinates of points in image 2
@@ -17,7 +17,7 @@ assert(dim==dim2,'Size mismatch of input points');
 assert(NumPoints==npoints2,'Size mismatch of input points');
 assert(dim==3,'Arguments x1, x2 should be 3xN matrices (homogeneous coords)');
 
-[rows,cols] = size(M1);
+[rows,cols] = size(M1{1});
 assert(rows==3 && cols==4,'Projection matrices should be of size 3x4');
 [rows,cols] = size(M2);
 assert(rows==3 && cols==4,'Projection matrices should be of size 3x4');
@@ -27,7 +27,7 @@ P = zeros(4,NumPoints);
 % Linear algorithm
 for j=1:NumPoints
     % Built matrix of linear homogeneous system of equations
-    A1 = cross2Matrix(p1(:,j))*M1;
+    A1 = cross2Matrix(p1(:,j))*M1{i};
     A2 = cross2Matrix(p2(:,j))*M2;
     A = [A1; A2];
     
@@ -39,3 +39,4 @@ end
 P = P./repmat(P(4,:),4,1); % Dehomogeneize (P is expressed in homogeneous coordinates)
 
 return
+>>>>>>> michele_keypoint_candidate
