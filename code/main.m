@@ -63,6 +63,10 @@ end
 
 initState = bootstrap(img0,img1);
 
+% prepare for continuos operation
+prevState = initState;
+prevImage = img1;
+
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
 for i = range
@@ -79,8 +83,12 @@ for i = range
     else
         assert(false);
     end
+    
+    
+    processFrame(prevState, image);
+    
+    
     % Makes sure that plots refresh.    
     pause(0.01);
-    
-    prev_img = image;
+    prevImage = image;
 end
