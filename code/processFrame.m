@@ -1,6 +1,13 @@
 function [curState,curPose] = processFrame(prevState,image)
-% main VO implemented here
-% prevState contains:
+% main VO implemented here:
+%           - always performs localization using the landmarks and
+%           descriptors from the last keyframe and matching them with the
+%           newly computed ones of the current frame
+%           - adds and handles candiate keypoints
+%           - if image is used as a keyframe, new features are triangulated
+%           and added to the landmarks
+%   Input:
+%       prevState, containing:
 %           Keypoints:                   [2xK] array containing K keypoint pairs
 %           Landmarks:                   [3xK] array containing K landmark coordinates
 %           Descriptors:                 [256xK] array containing K descriptors of previous frame
@@ -9,15 +16,16 @@ function [curState,curPose] = processFrame(prevState,image)
 %                                         candidate keypoints
 %           InitCandidatePoses:          [12xM] array containing M initial camera poses of first
 %                                         observation of candidate keypoints
+%       image: [height x width] current frame
+%
+%   Output:
+%       curState,curPose
 
 
 global K PATCHRADIUS
 
 
-curState = prevState;
-curPose = eye(3,4);
-
-% TODO
+%% TODO: this section is duplicated code (bootstrap does the same) unify? or at least simplify
 
 [height, width] = size(image);
 % Detect corners on both frames
@@ -42,12 +50,26 @@ Match1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
 Match2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
 [R,T] = disambiguateRelativePose(Rots,u3,Match1',Match2',K,K);
 
+Keypoints = Match2(:,1:2)';
 
-Keypoints = Match2(:,1:2)'; %TODO: Check dimension, also of X                      
+%%
+
+% TODO: add code to save candiate points out of matchDescriptors
+%       (most likely function interface has to be changed to return also
+%       the unmatched keypoints and their descriptors)
+%
+% TODO: add code for checking if this frame is a keyframe (+ triangulation
+%       --> new landmarks)
+
+keyframeDetected = true;
 
 curPose = [R T];
-curState.Keypoints = Keypoints;
-curState.Descriptors = Descriptors;
+curState = prevState;
+
+if (keyframeDetected)
+    curState.Keypoints = Keypoints;
+    curState.Descriptors = Descriptors;
+end
 
 end
 

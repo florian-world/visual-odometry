@@ -101,10 +101,7 @@ for i = range
         assert(false);
     end
     
-    prevKeypoints = state.Keypoints;
-    
     [state, pose] = processFrame(state, image);
-    
     
     
     t = -pose(:,4);
@@ -114,24 +111,9 @@ for i = range
     subplot(1, 3, [1 2]);
     imshow(image);
     hold on;
-    plot(state.Keypoints(1, :), state.Keypoints(2, :), 'rx', 'Linewidth', 2);
-    
-
-%     if (nnz(inlier_mask) > 0)
-%         plot(matched_query_keypoints(2, (inlier_mask)>0), ...
-%             matched_query_keypoints(1, (inlier_mask)>0), 'gx', 'Linewidth', 2);
-%     end
-%     [~, query_indices, match_indices] = find(matches);
-% 
-%     x_from = query_keypoints(1, query_indices);
-%     x_to = database_keypoints(1, match_indices);
-%     y_from = query_keypoints(2, query_indices);
-%     y_to = database_keypoints(2, match_indices);
-%     plot([y_from; y_to], [x_from; x_to], 'g-', 'Linewidth', 3);
-    
+    plot(state.Keypoints(1, :), state.Keypoints(2, :), 'rx', 'Linewidth', 2);    
     hold off;
     title('Inlier and outlier matches');
-    
     
     subplot(1, 3, 3);
     hold on;
@@ -142,7 +124,6 @@ for i = range
     axis vis3d;
     axis([-15 15 -10 10 -1 40]);
     hold off;
-    
     
     % Makes sure that plots refresh.    
     pause(1);
