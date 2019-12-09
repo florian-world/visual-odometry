@@ -17,16 +17,16 @@ function State = bootstrap(Im1,Im2)
 %                                         candidate keypoints
 %           InitCandidatePoses:          [12xM] array containing M initial camera poses of first
 %                                         observation of candidate keypoints
-global K
+global K PATCHSIZE
 
 % Detect corners on both frames
 % TODO: select only certain number of corners based on params (Simon)
-corners1 = detectHarrisFeatures(Im1);
+corners1 = detectHarrisFeatures(Im1,'ROI',);
 corners2 = detectHarrisFeatures(Im2);
 
 % Match keypoints by calculating BRIEF descriptors and matching
 % TODO: implement (Mambo)
-matches = matchDescribeCorners(corners1.Location, corners2.Location);
+matches = matchDescriptors(corners1.Location, corners2.Location);
 
 % Estimate relative pose between initial frames and create 3D pointcloud
 % Check if det(F) = 0, if not correct as in Ex. 6 (Simon)

@@ -1,4 +1,4 @@
-function descriptors = describeKeyPoints(I,u,v)
+function descriptors = describeKeyPoints(I_unfilt,u,v)
     % INPUT:
     % I = r x c Image
     % u = Nx1
@@ -15,10 +15,10 @@ function descriptors = describeKeyPoints(I,u,v)
     %
     % Pattern is generated randomly only once then the same pattern is
     % used for all patches
-    
+    global PATCHSIZE
+    I = imgaussfilt(I_unfilt,3);
     % patch size
-    patchSize = 10;
-    patch_edge = (2*patchSize+1);
+    patch_edge = (2*PATCHSIZE+1);
     patch_elements = patch_edge^2;
     % pattern generation
     s = 2;
@@ -30,7 +30,7 @@ function descriptors = describeKeyPoints(I,u,v)
 %     v = [150;300;450];
     
     % grid to describe patch around (0,0) 
-    [R,C]=meshgrid(-patchSize:patchSize,-patchSize:patchSize);
+    [R,C]=meshgrid(-PATCHSIZE:PATCHSIZE,-PATCHSIZE:PATCHSIZE);
     % Generating one grid for each keypoint
     Rn = repmat(R,1,1,size(u,1));
     Cn = repmat(C,1,1,size(u,1));
@@ -52,5 +52,5 @@ function descriptors = describeKeyPoints(I,u,v)
     % computing difference for each pair
     difference = Point2-Point1;
     % evaluating difference
-    descriptors=difference'>0;
+    descriptors=difference>0;
 end
