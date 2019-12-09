@@ -19,10 +19,13 @@ function State = bootstrap(Im1,Im2)
 %                                         observation of candidate keypoints
 global K PATCHRADIUS
 
+imSize = size(Im1);
+height = imSize(1);
+width = imSize(2);
 % Detect corners on both frames
-% TODO: select only certain number of corners based on params (Simon)
-corners1 = detectHarrisFeatures(Im1,'ROI',);
-corners2 = detectHarrisFeatures(Im2);
+roi = [PATCHRADIUS+1,PATCHRADIUS+1,width-(2*PATCHRADIUS),height-(2*PATCHRADIUS)];
+corners1 = detectHarrisFeatures(Im1,'ROI',roi);
+corners2 = detectHarrisFeatures(Im2,'ROI',roi);
 
 % Match keypoints by calculating BRIEF descriptors and matching
 % TODO: implement (Mambo)
