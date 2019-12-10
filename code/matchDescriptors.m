@@ -1,4 +1,4 @@
-function [M1, M2, D2] = matchDescriptors(d1,d2,l1,l2)
+function [M1, M2, idx_mask1, idx_mask2] = matchDescriptors(d1,d2,l1,l2)
 %MATCH DESCRIPTORS 
 %   Input:
 %           d1: [256xP] array containing P descriptors
@@ -9,7 +9,8 @@ function [M1, M2, D2] = matchDescriptors(d1,d2,l1,l2)
 %   Output:
 %           M1: [2xM] matrix of [x,y] coordinates of matches from l1
 %           M2: [2xM] matrix of [x,y] cooridnates of matches from l2
-%           D2: [256xM] matrix of descriptors of img2
+%           idx_mask1: [1xP] bit mask of indices of matches of img1
+%           idx_mask2: [1xQ] bit mask of indices of matches of img2
 
 
 global MATCHING_THRESHOLD
@@ -33,10 +34,16 @@ matches = unique_matches;
 idxs_l2_logical = matches > 0;
 idxs_l1 = matches(idxs_l2_logical);
 
+idxs_l1_logical = false(1,length(l1));
+idxs_l1_logical(idxs_l1) = true;
+
 
 M1 = l1(idxs_l1,:);
 M2 = l2(idxs_l2_logical,:);
-D2 = d2(:,idxs_l2_logical);
+% D2 = d2(:,idxs_l2_logical);
+
+idx_mask1 = idxs_l1_logical;
+idx_mask2 = idxs_l2_logical;
 
 assert(all(size(M1) == size(M2)));
 

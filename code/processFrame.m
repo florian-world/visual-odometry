@@ -36,7 +36,8 @@ Desc2 = describeKeyPoints(image,corners2.Location(:,1),corners2.Location(:,2));
 
 % Match keypoints by calculating BRIEF descriptors and matching
 % TODO: implement (Mambo)
-[Match1, Match2, Descriptors] = matchDescriptors(prevState.Descriptors,Desc2,prevState.Keypoints',corners2.Location);
+[Match1, Match2, Idx1, Idx2] = matchDescriptors(prevState.Descriptors,Desc2,prevState.Keypoints',corners2.Location);
+Descriptors = Desc2(:,Idx2);
 
 % Estimate relative pose between initial frames and create 3D pointcloud
 % Check if det(F) = 0, if not correct as in Ex. 6 (Simon)
