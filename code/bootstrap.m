@@ -65,4 +65,3 @@ State.InitCandidateKeypoints = [];
 State.InitCandidatePoses = [];
 
 end
-

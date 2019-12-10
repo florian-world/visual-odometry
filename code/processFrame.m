@@ -36,8 +36,7 @@ corners2 = detectHarrisFeatures(image,'ROI',roi);
 Desc2 = describeKeyPoints(image,corners2.Location(:,1),corners2.Location(:,2));
 
 % Match keypoints by calculating BRIEF descriptors and matching
-% TODO: implement (Mambo)
-[Match1, Match2, Idx1, Idx2] = matchDescriptors(prevState.Descriptors,Desc2,prevState.Keypoints',corners2.Location);
+[Match1, Match2, ~, Idx2] = matchDescriptors(prevState.Descriptors,Desc2,prevState.Keypoints',corners2.Location);
 Descriptors = Desc2(:,Idx2);
 
 % Estimate relative pose between initial frames and create 3D pointcloud
@@ -54,14 +53,7 @@ Match2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
 
 Keypoints = Match2(:,1:2)';
 
-%%
-
-% TODO: add code to save candiate points out of matchDescriptors
-%       (most likely function interface has to be changed to return also
-%       the unmatched keypoints and their descriptors)
-%
-% TODO: add code for checking if this frame is a keyframe (+ triangulation
-%       --> new landmarks)
+%% Track candidate keypoints
 
 curPose = [R T];
 curState = prevState;
@@ -96,12 +88,27 @@ else
     curState.InitCandidatePoses = newInitCandidatePoses;
 end
 
+
+%% Keyframe detection and triangulation of new landmarks
+%
+% TODO: add code for checking if this frame is a keyframe (+ triangulation
+%       --> new landmarks)
+
 keyframeDetected = true;
 
 if (keyframeDetected)
     curState.Keypoints = Keypoints;
     curState.Descriptors = Descriptors;
 end
+
+
+%% Plot
+
+global COLOR_CANDIDATE COLOR_LANDMARK
+scatter(Keypoints(1, :), Keypoints(2, :), 60, COLOR_LANDMARK, 'x', 'LineWidth', 3);
+scatter(curState.CandidateKeypoints(1, :), curState.CandidateKeypoints(2, :), 10, COLOR_CANDIDATE, 'filled');
+
+
 
 end
 

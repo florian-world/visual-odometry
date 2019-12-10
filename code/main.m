@@ -1,14 +1,22 @@
+clear all
+% close all
+clc
+
 %% Setup
 ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 malaga_path = '../data/malaga-urban-dataset-extract-07/';
 kitti_path = '../data/kitti/';
 
 global K PATCHRADIUS MATCHING_THRESHOLD MAGIC_KEYFRAME_THRESHOLD ...
-    MAGIC_KEYFRAME_ANGLE_RAD
+    MAGIC_KEYFRAME_ANGLE_RAD COLOR_LANDMARK COLOR_CANDIDATE ...
+    COLOR_TRAJECTORY
 PATCHRADIUS = 10;
 MATCHING_THRESHOLD = 0.05;
 MAGIC_KEYFRAME_THRESHOLD = 0.1;
 MAGIC_KEYFRAME_ANGLE_RAD = deg2rad(5);
+COLOR_LANDMARK = 'red';
+COLOR_CANDIDATE = 'green';
+COLOR_TRAJECTORY = 'black';
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
@@ -75,15 +83,10 @@ trajectory = [0 0 0]; % x y z
 
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
-% visualization stuff
+
+
+% visualization in figure 1 (all handled in loop)
 figure(1);
-subplot(1, 3, 3);
-scatter3(state.Landmarks(1, :), state.Landmarks(2, :), state.Landmarks(3, :), 5);
-set(gcf, 'GraphicsSmoothing', 'on');
-view(0,0);
-axis equal;
-axis vis3d;
-axis([-15 15 -10 10 -1 40]);
 
 
 for i = range
@@ -101,23 +104,21 @@ for i = range
         assert(false);
     end
     
+    subplot(1, 3, [1 2]);
+    imshow(image);
+    hold on;
     [state, pose] = processFrame(state, image);
-    
+    hold off;
+    title(sprintf('Keypoints frame %d', i));
     
     t = -pose(:,4);
     newpoint = trajectory(end,:) + t';
     trajectory(end+1,:) = newpoint;
     
-    subplot(1, 3, [1 2]);
-    imshow(image);
-    hold on;
-    plot(state.Keypoints(1, :), state.Keypoints(2, :), 'rx', 'Linewidth', 2);    
-    hold off;
-    title('Inlier and outlier matches');
-    
     subplot(1, 3, 3);
     hold on;
-    plot3(trajectory(end-1:end,1),trajectory(end-1:end,2),trajectory(end-1:end,3), 'Color', 'red', 'LineWidth', 3);
+    scatter3(state.Landmarks(1, :), state.Landmarks(2, :), state.Landmarks(3, :), 5, COLOR_LANDMARK, 'filled');
+    plot3(trajectory(end-1:end,1),trajectory(end-1:end,2),trajectory(end-1:end,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
     set(gcf, 'GraphicsSmoothing', 'on');
     view(0,0);
     axis equal;
