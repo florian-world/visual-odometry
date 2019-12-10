@@ -63,18 +63,40 @@ Keypoints = Match2(:,1:2)';
 % TODO: add code for checking if this frame is a keyframe (+ triangulation
 %       --> new landmarks)
 
+curPose = [R T];
+curState = prevState;
+
 % Check if there are any candidate keypoints yet (only empty directly after
 % keyframe)
-if isempty(prevState.Descriptors)
-    bla=0;
+if isempty(prevState.CandidateKeypoints)
+    curState.CandidateKeypoints = corners2.Location(~Idx2,:)';
+    curState.CandidateDescriptors = Desc2(:,~Idx2);
+    curState.InitCandidateKeypoints = corners2.Location(~Idx2,:)';
+    curState.InitCandidatePoses = repmat(curPose(:),1,sum(~Idx2));
 else
-    blob=0;
+    % Track candidate keypoints and update candidate list
+    DescNoMatch = Desc2(:,~Idx2);
+    PointsNoMatch = corners2.Location(~Idx2,:);
+    [~, ~, CandIdx1, CandIdx2] = matchDescriptors(prevState.CandidateDescriptors,DescNoMatch,prevState.CandidateKeypoints',PointsNoMatch);
+    % First only keep candidates that were succesfully tracked and update
+    % non-init components
+    newCandidateKeypoints = PointsNoMatch(CandIdx2,:)';
+    newCandidateDescriptors = DescNoMatch(:,CandIdx2);
+    newInitCandidateKeypoints = prevState.InitCandidateKeypoints(:,CandIdx1);
+    newInitCandidatePoses = prevState.InitCandidatePoses(:,CandIdx1);
+    % Then append new candidates
+    newCandidateKeypoints = [newCandidateKeypoints PointsNoMatch(~CandIdx2,:)'];
+    newCandidateDescriptors = [newCandidateDescriptors DescNoMatch(:,~CandIdx2)];
+    newInitCandidateKeypoints = [newInitCandidateKeypoints PointsNoMatch(~CandIdx2,:)'];
+    newInitCandidatePoses = [newInitCandidatePoses repmat(curPose(:),1,sum(~CandIdx2))];
+    % Write updated candidates to state
+    curState.CandidateKeypoints = newCandidateKeypoints;
+    curState.CandidateDescriptors = newCandidateDescriptors;
+    curState.InitCandidateKeypoints = newInitCandidateKeypoints;
+    curState.InitCandidatePoses = newInitCandidatePoses;
 end
 
 keyframeDetected = true;
-
-curPose = [R T];
-curState = prevState;
 
 if (keyframeDetected)
     curState.Keypoints = Keypoints;

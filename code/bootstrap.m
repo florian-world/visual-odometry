@@ -60,9 +60,9 @@ State.Landmarks = Landmarks;
 State.Descriptors = Descriptors;
 % These state entries are not calculated during bootstrapping
 State.CandidateKeypoints = [];
-State.CanidateDescriptors = [];
+State.CandidateDescriptors = [];
 State.InitCandidateKeypoints = [];
-State.InitCadidatePoses = [];
+State.InitCandidatePoses = [];
 
 end
 
