@@ -40,7 +40,6 @@ idxs_l1_logical(idxs_l1) = true;
 
 M1 = l1(idxs_l1,:);
 M2 = l2(idxs_l2_logical,:);
-% D2 = d2(:,idxs_l2_logical);
 
 idx_mask1 = idxs_l1_logical;
 idx_mask2 = idxs_l2_logical;

@@ -12,6 +12,7 @@ function [curState,curPose] = processFrame(prevState,image)
 %           Landmarks:                   [3xK] array containing K landmark coordinates
 %           Descriptors:                 [256xK] array containing K descriptors of previous frame
 %           CandidateKeypoints:          [2xM] array containing M candidate keypoints
+%           CandidateDescriptors:        [256xM] array containing M descriptors of candidate keypoints 
 %           InitCandidateKeypoints:      [2xM] array containing M initial observations of
 %                                         candidate keypoints
 %           InitCandidatePoses:          [12xM] array containing M initial camera poses of first
@@ -61,6 +62,14 @@ Keypoints = Match2(:,1:2)';
 %
 % TODO: add code for checking if this frame is a keyframe (+ triangulation
 %       --> new landmarks)
+
+% Check if there are any candidate keypoints yet (only empty directly after
+% keyframe)
+if isempty(prevState.Descriptors)
+    bla=0;
+else
+    blob=0;
+end
 
 keyframeDetected = true;
 
