@@ -23,7 +23,7 @@ function [curState,curPose] = processFrame(prevState,image)
 %       curState,curPose
 
 
-global K PATCHRADIUS
+global K PATCHRADIUS FRAME_NUM FIRST_KEYFRAME
 
 
 %% TODO: this section is duplicated code (bootstrap does the same) unify? or at least simplify
@@ -85,7 +85,7 @@ else
     curState.CandidateKeypoints = newCandidateKeypoints;
     curState.CandidateDescriptors = newCandidateDescriptors;
     curState.InitCandidateKeypoints = newInitCandidateKeypoints;
-    curState.InitCandidatePoses = newInitCandidatePoses;
+    curState.InitCandidatePoses = newInitCandidatePoses; %does this overwrite also init pose of all canditate or only the new?
 end
 
 
@@ -94,11 +94,28 @@ end
 % TODO: add code for checking if this frame is a keyframe (+ triangulation
 %       --> new landmarks)
 
-keyframeDetected = true;
+%keyframeDetected = true;
 
-if (keyframeDetected)
+if (isKeyFrame(curState.Landmarks,T)) || (FRAME_NUM == FIRST_KEYFRAME)
     curState.Keypoints = Keypoints;
     curState.Descriptors = Descriptors;
+    newLand=triangNewKPoint(curState,R);
+    curState.Landmarks=union(curState.Landmarks,newLand);
+    comp=triangNewKPoint(curState)
+    correspondCandidate=curState.CandidateKeypoints(:,comp>0);
+    validCand=curState.InitCandidatePoses(:,comp>0);
+    pOld=nvec;
+    pOld(3,:)=1;
+    correspondCandidate = [correspondCandidate;ones(1,length(correspondCandidate))];
+    newLand=linearTriangulationMVar(pOld,correspondCandidate,validCand,R);
+    %eliminate triangulated from candidate
+    curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
+    curState.CandidateKeypoints=curState.CandidateKeypoints(:,comp>0);
+    curState.CandidateDescriptors=curState.CandidateDescriptors(:,comp>0);
+    curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
+    
+    
+    
 end
 
 

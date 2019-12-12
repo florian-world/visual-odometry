@@ -1,10 +1,11 @@
-function P = linearTriangulationMVar(p1,p2,M1,M2)
+function P = linearTriangulationMVar(p1,p2,Marr,M2)
 % LINEARTRIANGULATION  Linear Triangulation
-% mod version with variable M1
+% mod version with M1 as array
 % Input:
 %  - p1(3,N): homogeneous coordinates of points in image 1
 %  - p2(3,N): homogeneous coordinates of points in image 2
-%  - M1(3,4): projection matrix corresponding to first image
+%  - Marr(3,4): projection matrix corresponding to first observation of
+%       the point.
 %  - M2(3,4): projection matrix corresponding to second image
 %
 % Output:
@@ -27,7 +28,7 @@ P = zeros(4,NumPoints);
 % Linear algorithm
 for j=1:NumPoints
     % Built matrix of linear homogeneous system of equations
-    A1 = cross2Matrix(p1(:,j))*M1{i};
+    A1 = cross2Matrix(p1(:,j))*Marr(j);
     A2 = cross2Matrix(p2(:,j))*M2;
     A = [A1; A2];
     
@@ -39,4 +40,3 @@ end
 P = P./repmat(P(4,:),4,1); % Dehomogeneize (P is expressed in homogeneous coordinates)
 
 return
->>>>>>> michele_keypoint_candidate
