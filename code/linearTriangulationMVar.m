@@ -14,11 +14,11 @@ function P = linearTriangulationMVar(p1,p2,Marr,M2)
 % Sanity checks
 [dim,NumPoints] = size(p1);
 [dim2,npoints2] = size(p2);
-assert(dim==dim2,'Size mismatch of input points');
-assert(NumPoints==npoints2,'Size mismatch of input points');
-assert(dim==3,'Arguments x1, x2 should be 3xN matrices (homogeneous coords)');
+% assert(dim==dim2,'Size mismatch of input points');
+% assert(NumPoints==npoints2,'Size mismatch of input points');
+% assert(dim==3,'Arguments x1, x2 should be 3xN matrices (homogeneous coords)');
 
-[rows,cols] = size(M1{1});
+[rows,cols] = size(Marr);
 assert(rows==3 && cols==4,'Projection matrices should be of size 3x4');
 [rows,cols] = size(M2);
 assert(rows==3 && cols==4,'Projection matrices should be of size 3x4');

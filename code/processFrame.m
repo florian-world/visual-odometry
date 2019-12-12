@@ -99,23 +99,20 @@ end
 if (isKeyFrame(curState.Landmarks,T)) || (FRAME_NUM == FIRST_KEYFRAME)
     curState.Keypoints = Keypoints;
     curState.Descriptors = Descriptors;
-    newLand=triangNewKPoint(curState,R);
-    curState.Landmarks=union(curState.Landmarks,newLand);
-    comp=triangNewKPoint(curState)
-    correspondCandidate=curState.CandidateKeypoints(:,comp>0);
-    validCand=curState.InitCandidatePoses(:,comp>0);
-    pOld=nvec;
-    pOld(3,:)=1;
-    correspondCandidate = [correspondCandidate;ones(1,length(correspondCandidate))];
-    newLand=linearTriangulationMVar(pOld,correspondCandidate,validCand,R);
-    %eliminate triangulated from candidate
-    curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
-    curState.CandidateKeypoints=curState.CandidateKeypoints(:,comp>0);
-    curState.CandidateDescriptors=curState.CandidateDescriptors(:,comp>0);
-    curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
-    
-    
-    
+    [comp, nvec] = triangNewKPoint(curState,R);
+    if ~all(comp == 0)
+        correspondCandidate=curState.CandidateKeypoints(:,comp>0);
+        validCand=curState.InitCandidatePoses(:,comp>0);
+        nvec(3,:)=1;
+        correspondCandidate = [correspondCandidate;ones(1,length(correspondCandidate))];
+        newLand=linearTriangulationMVar(nvec,correspondCandidate,validCand,R);
+        %eliminate triangulated from candidate
+        curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
+        curState.CandidateKeypoints=curState.CandidateKeypoints(:,comp>0);
+        curState.CandidateDescriptors=curState.CandidateDescriptors(:,comp>0);
+        curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
+        curState.Landmarks=union(curState.Landmarks,newLand);
+    end
 end
 
 

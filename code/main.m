@@ -13,12 +13,11 @@ global K PATCHRADIUS MATCHING_THRESHOLD MAGIC_KEYFRAME_THRESHOLD ...
 %DEG_TO_PIX     factor of pixel to degree assuming equal x,y foc lenght
 FIRST_KEYFRAME = 3
 FRAME_NUM = 1;
-KEYFRAME_TRASLATION = [0,0,0]';
+KEYFRAME_TRANSLATION = [0,0,0]';
 PATCHRADIUS = 10;
 MATCHING_THRESHOLD = 0.05;
 MAGIC_KEYFRAME_THRESHOLD = 0.1;
 MAGIC_KEYFRAME_ANGLE_RAD = deg2rad(5);
-DEG_TO_PIX=floor(MAGIC_KEYFRAME_ANGLE_RAD/(2*atan(K(1,3)/(2*K(1,1))))/K(1,3));
 
 COLOR_LANDMARK = 'red';
 COLOR_CANDIDATE = 'green';
@@ -54,6 +53,9 @@ elseif ds == 2
 else
     assert(false);
 end
+
+
+DEG_TO_PIX=floor(MAGIC_KEYFRAME_ANGLE_RAD/(2*atan(K(1,3)/(2*K(1,1))))/K(1,3));
 
 %% Bootstrap
 % need to set bootstrap_frames
