@@ -23,7 +23,7 @@ function [curState,curPose] = processFrame(prevState,image)
 %       curState,curPose
 
 
-global K PATCHRADIUS FRAME_NUM FIRST_KEYFRAME
+global K PATCHRADIUS FRAME_NUM FIRST_KEYFRAME KEYFRAME_TRANSLATION TOT_TRANSLATION
 
 
 %% TODO: this section is duplicated code (bootstrap does the same) unify? or at least simplify
@@ -95,23 +95,33 @@ end
 %       --> new landmarks)
 
 %keyframeDetected = true;
-
-if (isKeyFrame(curState.Landmarks,T)) || (FRAME_NUM == FIRST_KEYFRAME)
+TOT_TRANSLATION=TOT_TRANSLATION+T;
+if (isKeyFrame(curState.Landmarks)) || (FRAME_NUM == FIRST_KEYFRAME)
+    disp('Keyframeframe');
     curState.Keypoints = Keypoints;
     curState.Descriptors = Descriptors;
     [comp, nvec] = triangNewKPoint(curState,R);
     if ~all(comp == 0)
         correspondCandidate=curState.CandidateKeypoints(:,comp>0);
+        correspondCandidateDescriptors=curState.CandidateDescriptors(:,comp>0);
         validCand=curState.InitCandidatePoses(:,comp>0);
+        nvec=nvec(:,comp>0);
         nvec(3,:)=1;
-        correspondCandidate = [correspondCandidate;ones(1,length(correspondCandidate))];
-        newLand=linearTriangulationMVar(nvec,correspondCandidate,validCand,R);
+        correspondCandidate1 = [correspondCandidate;ones(1,length(correspondCandidate))];
+        newLand=zeros(4,length(validCand));
+        for jj=1:length(validCand)
+            candPose=reshape(validCand(:,jj),[3,4]);
+            newLand(:,jj)=linearTriangulation(nvec(:,jj),correspondCandidate1(:,jj),candPose,curPose);
+        end
         %eliminate triangulated from candidate
         curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
         curState.CandidateKeypoints=curState.CandidateKeypoints(:,comp>0);
         curState.CandidateDescriptors=curState.CandidateDescriptors(:,comp>0);
-        curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
-        curState.Landmarks=union(curState.Landmarks,newLand);
+        curState.InitCandidateKeypoints=curState.InitCandidateKeypoints(:,comp>0);
+        %curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0); alerady cut??
+        curState.Landmarks=[curState.Landmarks,newLand(1:3,:)];
+        curState.Keypoints=[curState.Keypoints,correspondCandidate];
+        curState.Descriptors=[curState.Descriptors,correspondCandidateDescriptors];
     end
 end
 
