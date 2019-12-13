@@ -35,13 +35,24 @@ Desc2 = describeKeyPoints(Im2,corners2.Location(:,1),corners2.Location(:,2));
 [Match1, Match2, Idx1, Idx2] = matchDescriptors(Desc1,Desc2,corners1.Location,corners2.Location);
 Descriptors = Desc2(:,Idx2);
 
+% TEST: Point tracking using KLT
+pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
+initialize(pointTracker,corners1.Location,Im1);
+
+[trackedPoints,trackedPointsValidity] = pointTracker(Im2);
+KLTMatch1 = corners1.Location(trackedPointsValidity,:);
+KLTMatch2 = trackedPoints(trackedPointsValidity,:);
+
+F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
+                              'RANSAC', 'NumTrials', 2000);
+
 % Estimate relative pose between initial frames and create 3D pointcloud
 % Check if det(F) = 0, if not correct as in Ex. 6 (Simon)
 F = estimateFundamentalMatrix(Match1, Match2, 'Method', ...
                               'RANSAC', 'NumTrials', 2000);
                  
 % Recover essential matrix from F, then decompose into R,T
-E = K'*F*K;
+E = K'*F_KLT*K;
 [Rots,u3] = decomposeEssentialMatrix(E);
 Match1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
 Match2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
