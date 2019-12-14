@@ -54,17 +54,17 @@ F = estimateFundamentalMatrix(Match1, Match2, 'Method', ...
 % Recover essential matrix from F, then decompose into R,T
 E = K'*F_KLT*K;
 [Rots,u3] = decomposeEssentialMatrix(E);
-Match1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
-Match2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
-[R,T] = disambiguateRelativePose(Rots,u3,Match1',Match2',K,K);
+KLTMatch1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
+KLTMatch2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
+[R,T] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
 
 % Triangulate points to create pointcloud
 M1 = K * eye(3,4);
 M2 = K * [R, T];
-X_hom = linearTriangulation(Match1',Match2',M1,M2); % Output of this is homogenous
+X_hom = linearTriangulation(KLTMatch1',KLTMatch2',M1,M2); % Output of this is homogenous
 Landmarks = X_hom(1:3,:);
 
-Keypoints = Match2(:,1:2)'; %TODO: Check dimension, also of X                      
+Keypoints = KLTMatch2(:,1:2)'; %TODO: Check dimension, also of X                      
   
 State.Keypoints = Keypoints;
 State.Landmarks = Landmarks;

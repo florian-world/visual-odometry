@@ -92,8 +92,8 @@ trajectory = [0 0 0]; % x y z
 
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
-
-
+% First previous image
+prevImage = img1;
 % visualization in figure 1 (all handled in loop)
 figure(1);
 
@@ -116,7 +116,7 @@ for i = range
     subplot(1, 3, [1 2]);
     imshow(image);
     hold on;
-    [state, pose] = processFrame(state, image);
+    [state, pose] = processFrame(state, prevImage, image);
     hold off;
     title(sprintf('Keypoints frame %d', i));
     
@@ -136,7 +136,7 @@ for i = range
     hold off;
     
     % Makes sure that plots refresh.    
-    pause(1);
+    pause(0.01);
     prevImage = image;
     FRAME_NUM = FRAME_NUM+1;
 end

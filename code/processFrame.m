@@ -1,4 +1,4 @@
-function [curState,curPose] = processFrame(prevState,image)
+function [curState,curPose] = processFrame(prevState,prev_image,image)
 % main VO implemented here:
 %           - always performs localization using the landmarks and
 %           descriptors from the last keyframe and matching them with the
@@ -17,6 +17,7 @@ function [curState,curPose] = processFrame(prevState,image)
 %                                         candidate keypoints
 %           InitCandidatePoses:          [12xM] array containing M initial camera poses of first
 %                                         observation of candidate keypoints
+%       prev_image: [height x width] previous frame
 %       image: [height x width] current frame
 %
 %   Output:
@@ -39,19 +40,30 @@ Desc2 = describeKeyPoints(image,corners2.Location(:,1),corners2.Location(:,2));
 [Match1, Match2, ~, Idx2] = matchDescriptors(prevState.Descriptors,Desc2,prevState.Keypoints',corners2.Location);
 Descriptors = Desc2(:,Idx2);
 
+% KLT
+pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
+initialize(pointTracker,prevState.Keypoints',prev_image);
+
+[trackedPoints,trackedPointsValidity] = pointTracker(image);
+KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
+KLTMatch2 = trackedPoints(trackedPointsValidity,:);
+
 % Estimate relative pose between initial frames and create 3D pointcloud
 % Check if det(F) = 0, if not correct as in Ex. 6 (Simon)
-F = estimateFundamentalMatrix(Match1, Match2, 'Method', ...
+% F = estimateFundamentalMatrix(Match1, Match2, 'Method', ...
+%                               'RANSAC', 'NumTrials', 2000);
+                          
+F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
                               'RANSAC', 'NumTrials', 2000);
                  
 % Recover essential matrix from F, then decompose into R,T
-E = K'*F*K;
+E = K'*F_KLT*K;
 [Rots,u3] = decomposeEssentialMatrix(E);
-Match1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
-Match2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
-[R,T] = disambiguateRelativePose(Rots,u3,Match1',Match2',K,K);
+KLTMatch1(:,3)=1; % TODO: These must be the homogeneous coords of the matches
+KLTMatch2(:,3)=1; % TODO: These must be the homogeneous coords of the matches
+[R,T] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
 
-Keypoints = Match2(:,1:2)';
+Keypoints = KLTMatch2(:,1:2)';
 
 %% Track candidate keypoints
 
