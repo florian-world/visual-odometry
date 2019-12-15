@@ -88,7 +88,7 @@ else
     newInitCandidateKeypoints = prevState.InitCandidateKeypoints(:,trackedCandPointsValidity);
     newInitCandidatePoses = prevState.InitCandidatePoses(:,trackedCandPointsValidity);
     % Then append new candidates
-    newCornersMask = findNewCandidates(newCorners.Location,PointsNoMatch(uniqueNewIdxs,:));
+    newCornersMask = findNewCandidates(newCorners.Location,[PointsNoMatch(uniqueNewIdxs,:); newCandidateKeypoints']);
     newDetectedCorners = newCorners.Location(newCornersMask,:);
     newCandidateKeypoints = [newCandidateKeypoints PointsNoMatch(uniqueNewIdxs,:)' newDetectedCorners'];
     newInitCandidateKeypoints = [newInitCandidateKeypoints PointsNoMatch(uniqueNewIdxs,:)' newDetectedCorners'];
