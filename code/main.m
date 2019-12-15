@@ -132,7 +132,7 @@ for i = range
     view(0,0);
     axis equal;
     axis vis3d;
-    axis([-15 15 -10 10 -1 40]);
+    axis([-150 150 -10 10 -1 400]);
     hold off;
     
     % Makes sure that plots refresh.    
