@@ -94,6 +94,11 @@ else
     newCandidateKeypoints = [newCandidateKeypoints PointsNoMatch(uniqueNewIdxs,:)' newDetectedCorners'];
     newInitCandidateKeypoints = [newInitCandidateKeypoints PointsNoMatch(uniqueNewIdxs,:)' newDetectedCorners'];
     newInitCandidatePoses = [newInitCandidatePoses repmat(curPose(:),1,sum(uniqueNewIdxs)+sum(newCornersMask))];
+    % Check if any candidates are already actual keypoints
+    noKeypointsMask = findNewCandidates(newCandidateKeypoints',curState.Keypoints');
+    newCandidateKeypoints = newCandidateKeypoints(:,noKeypointsMask);
+    newInitCandidateKeypoints = newInitCandidateKeypoints(:,noKeypointsMask);
+    newInitCandidatePoses = newInitCandidatePoses(:,noKeypointsMask);
     % Write updated candidates to state
     curState.CandidateKeypoints = newCandidateKeypoints;
     curState.InitCandidateKeypoints = newInitCandidateKeypoints;
