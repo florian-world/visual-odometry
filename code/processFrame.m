@@ -23,7 +23,7 @@ function [curState,curPose] = processFrame(prevState,prev_image,image)
 %       curState,curPose
 
 
-global K PATCHRADIUS FRAME_NUM FIRST_KEYFRAME KEYFRAME_TRANSLATION TOT_TRANSLATION
+global K PATCHRADIUS FRAME_NUM KEYFRAME_TRANSLATION TOT_TRANSLATION KEYFRAME_THRESHOLD
 
 
 %% TODO: this section is duplicated code (bootstrap does the same) unify? or at least simplify
@@ -37,6 +37,7 @@ newCorners = detectHarrisFeatures(image,'ROI',roi);
 pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
 initialize(pointTracker,prevState.Keypoints',prev_image);
 
+size(prevState.Keypoints,2)
 [trackedPoints,trackedPointsValidity] = pointTracker(image);
 KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
@@ -107,7 +108,8 @@ end
 
 %keyframeDetected = true;
 TOT_TRANSLATION=TOT_TRANSLATION+T;
-if (isKeyFrame(curState.Landmarks)) || (FRAME_NUM == FIRST_KEYFRAME)
+totRot=norm(rotationMatrixToVector(R))
+if (size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD) || (totRot>0.03) && (size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD*2.5)
     disp('Keyframeframe');
     curState.Keypoints = Keypoints;
     [comp, nvec] = triangNewKPoint(curState,R);
