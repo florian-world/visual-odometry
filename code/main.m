@@ -26,6 +26,8 @@ COLOR_LANDMARK = 'red';
 COLOR_CANDIDATE = 'green';
 COLOR_TRAJECTORY = 'black';
 
+location=[0,0,0];
+orientation=[{eye(3)}];
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
     assert(exist('kitti_path', 'var') ~= 0);
@@ -121,24 +123,33 @@ for i = range
     [state, pose] = processFrame(state, prevImage, image);
     hold off;
     title(sprintf('Keypoints frame %d', i));
-    
-    t = -pose(:,4);
-    newpoint = trajectory(end,:) + t';
-    trajectory(end+1,:) = newpoint;
+    [curOrientation,curLocation] = extrinsicsToCameraPose(pose(:,1:3),pose(:,4));
+    %t = -pose(:,4);
+%     newpoint = trajectory(end,:) + t';
+%     trajectory(end+1,:) = newpoint;
+    location(end+1,:)=location(end,:)+rotateframe(quaternion(orientation{end},'rotmat','frame'),curLocation);
+    orientation(end+1)={orientation{end}*curOrientation};
     
     subplot(1, 3, 3);
     hold on;
-    scatter3(state.Landmarks(1, :), state.Landmarks(2, :), state.Landmarks(3, :), 5, COLOR_LANDMARK, 'filled');
-    plot3(trajectory(end-1:end,1),trajectory(end-1:end,2),trajectory(end-1:end,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+    plot3(location(end-1:end,1),location(end-1:end,2),location(end-1:end,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+    %Uncoment below for landmarks plotting stops after a while to many landmarks or error in code i don't know
+    
+    %plotAdjust=rotateframe(quaternion(orientation{end},'rotmat','frame'),state.Landmarks');
+    %scatter3(location(end,1)+plotAdjust(:, 1), location(end,2)+plotAdjust(:, 2), location(end,3)+plotAdjust(:, 3), 5, COLOR_LANDMARK, 'filled');
+    
     set(gcf, 'GraphicsSmoothing', 'on');
     view(0,0);
     axis equal;
     axis vis3d;
-    axis([-150 150 -10 10 -1 400]);
+    axis([location(end,1)-40 location(end,1)+40 -10 10 location(end,3)-40 location(end,3)+40]);
+    %axis([-150 150 -10 10 -1 400]);
     hold off;
     
     % Makes sure that plots refresh.    
-    pause(0.01);
+    pause(0.06);
     prevImage = image;
     FRAME_NUM = FRAME_NUM+1;
+    
+    prev_pose=pose;
 end
