@@ -23,10 +23,8 @@ function [curState,curPose] = processFrame(prevState,prev_image,image)
 %       curState,curPose
 
 
-global K PATCHRADIUS FRAME_NUM KEYFRAME_TRANSLATION TOT_TRANSLATION KEYFRAME_THRESHOLD
+global K PATCHRADIUS KEYFRAME_THRESHOLD
 
-
-%% TODO: this section is duplicated code (bootstrap does the same) unify? or at least simplify
 
 [height, width] = size(image);
 % Detect corners on both frames
@@ -37,20 +35,31 @@ newCorners = detectHarrisFeatures(image,'ROI',roi);
 pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
 initialize(pointTracker,prevState.Keypoints',prev_image);
 
-size(prevState.Keypoints,2)
+% size(prevState.Keypoints,2);
 [trackedPoints,trackedPointsValidity] = pointTracker(image);
-KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
+% KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
+Landmarks = prevState.Landmarks(:,trackedPointsValidity);
                           
-F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
-                              'RANSAC', 'NumTrials', 2000);
-                 
-% Recover essential matrix from F, then decompose into R,T
-E = K'*F_KLT*K;
-[Rots,u3] = decomposeEssentialMatrix(E);
-KLTMatch1(:,3)=1;
-KLTMatch2(:,3)=1;
-[R,T] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
+% F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
+%                               'RANSAC', 'NumTrials', 2000);
+%                  
+% % Recover essential matrix from F, then decompose into R,T
+% E = K'*F_KLT*K;
+% [Rots,u3] = decomposeEssentialMatrix(E);
+% KLTMatch1(:,3)=1;
+% KLTMatch2(:,3)=1;
+% [R,T] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
+
+% run p3p
+[R,T, inlierIdx] = ransacLocalizationP3P(KLTMatch2',Landmarks,K);
+
+R = R';
+T = -T;
+
+% equivalent matlab call:
+% [R, T,inlierIdx] = estimateWorldCameraPose(double(KLTMatch2),Landmarks',cameraParameters("IntrinsicMatrix", K'), "MaxNumTrials", 2000);
+% T = T';
 
 Keypoints = KLTMatch2(:,1:2)';
 
@@ -59,8 +68,10 @@ Keypoints = KLTMatch2(:,1:2)';
 curPose = [R T];
 curState = prevState;
 
+fprintf("xz pos estimate: (%3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
+
 curState.Keypoints = Keypoints;
-curState.Landmarks = prevState.Landmarks(:,trackedPointsValidity);
+curState.Landmarks = Landmarks;
 
 PointsNoMatch = trackedPoints(~trackedPointsValidity,:);
 % Remove any negative points from PointsNoMatch
@@ -108,37 +119,39 @@ end
 
 %% Keyframe detection and triangulation of new landmarks
 %
-% TODO: add code for checking if this frame is a keyframe (+ triangulation
-%       --> new landmarks)
 
 %keyframeDetected = true;
-TOT_TRANSLATION=TOT_TRANSLATION+T;
-totRot=norm(rotationMatrixToVector(R))
-if (size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD) || (totRot>0.03) && (size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD*2.5)
-    disp('Keyframeframe');
+% totRot=norm(rotationMatrixToVector(R));
+if (false) %isKeyFrame(curState, curPose))%size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD) || (totRot>0.03) && (size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD*2.5)
+    curState.LastKeyframePose = curPose;
     curState.Keypoints = Keypoints;
-    [comp, nvec] = triangNewKPoint(curState,R);
-    if ~all(comp == 0)
-        correspondCandidate=curState.CandidateKeypoints(:,comp>0);
-        validCand=curState.InitCandidatePoses(:,comp>0);
-        nvec=nvec(:,comp>0);
+    [candidateMask, nvec] = triangNewKPoint(curState,R);
+    if any(candidateMask)
+        selectedCandKPs=curState.CandidateKeypoints(:,candidateMask);
+        selectedCandInitKPs=curState.InitCandidateKeypoints(:,candidateMask);
+        selectedCandInitPoses=curState.InitCandidatePoses(:,candidateMask);
+        nvec=nvec(:,candidateMask);
         nvec(3,:)=1;
-        correspondCandidate1 = [correspondCandidate;ones(1,size(correspondCandidate,2))];
-        newLand=zeros(4,length(validCand));
-        for jj=1:size(validCand,2)
-            candPose=reshape(validCand(:,jj),[3,4]);
-            newLand(:,jj)=linearTriangulation(nvec(:,jj),correspondCandidate1(:,jj),candPose,curPose);
+        selectedCandKPs(3,:) = 1;
+        selectedCandInitKPs(3,:) = 1;
+        newLandmarks=zeros(4,length(selectedCandInitPoses));
+        for jj=1:size(selectedCandInitPoses,2)
+            candPose=reshape(selectedCandInitPoses(:,jj),[3,4]);
+            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*candPose,K*curPose);
         end
+        % TODO this is not correct z might be pointing in any direction
+        inSightMask = newLandmarks(3,:) > 0;
+        newLandmarks = newLandmarks(1:3, inSightMask);
         %eliminate triangulated from candidate
-        curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0);
-        curState.CandidateKeypoints=curState.CandidateKeypoints(:,comp>0);
-        curState.InitCandidateKeypoints=curState.InitCandidateKeypoints(:,comp>0);
-        %curState.InitCandidatePoses=curState.InitCandidatePoses(:,comp>0); alerady cut??
-        curState.Landmarks=[curState.Landmarks,newLand(1:3,:)];
-        curState.Keypoints=[curState.Keypoints,correspondCandidate];
+        curState.InitCandidatePoses=curState.InitCandidatePoses(:,~candidateMask);
+        curState.CandidateKeypoints=curState.CandidateKeypoints(:,~candidateMask);
+        curState.InitCandidateKeypoints=curState.InitCandidateKeypoints(:,~candidateMask);
+        curState.Landmarks=[curState.Landmarks,newLandmarks(1:3,:)];
+        curState.Keypoints=[curState.Keypoints,selectedCandKPs(1:2,inSightMask)];
+        xlabel(sprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)", ...
+            size(newLandmarks,2), newLandmarks(1:3,end)));
     end
 end
-
 
 %% Plot
 
@@ -146,7 +159,4 @@ global COLOR_CANDIDATE COLOR_LANDMARK
 scatter(Keypoints(1, :), Keypoints(2, :), 60, COLOR_LANDMARK, 'x', 'LineWidth', 3);
 scatter(curState.CandidateKeypoints(1, :), curState.CandidateKeypoints(2, :), 10, COLOR_CANDIDATE, 'filled');
 
-
-
 end
-

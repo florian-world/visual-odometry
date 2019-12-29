@@ -32,29 +32,45 @@ initialize(pointTracker,corners1.Location,Im1);
 KLTMatch1 = corners1.Location(trackedPointsValidity,:);
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
 
-F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
-                              'RANSAC', 'NumTrials', 2000);
+[F_KLT, inliersIdx] = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
+                              'RANSAC', 'NumTrials', 15000);
+                          
+Inliers1 = KLTMatch1(inliersIdx,:);
+Inliers2 = KLTMatch1(inliersIdx,:);
                  
 % Recover essential matrix from F, then decompose into R,T
 E = K'*F_KLT*K;
 [Rots,u3] = decomposeEssentialMatrix(E);
-KLTMatch1(:,3)=1;
-KLTMatch2(:,3)=1;
-[R,T] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
+Inliers1_hom = flipud(Inliers1');
+Inliers1_hom(3,:) = 1;
+Inliers2_hom = flipud(Inliers2');
+Inliers2_hom(3,:) = 1;
+[R,T] = disambiguateRelativePose(Rots,u3,Inliers1_hom,Inliers2_hom,K,K);
 
 % Triangulate points to create pointcloud
 M1 = K * eye(3,4);
-M2 = K * [R, T];
-X_hom = linearTriangulation(KLTMatch1',KLTMatch2',M1,M2); % Output of this is homogenous
-Landmarks = X_hom(1:3,:);
+M2 = K * [R', -T];
+X_hom = linearTriangulation(Inliers1_hom,Inliers2_hom,M1,M2); % Output of this is homogenous
 
-Keypoints = KLTMatch2(:,1:2)';                     
-  
+mask_in_sight = X_hom(3,:)>0; % ignore negative z values
+
+if nnz(~mask_in_sight) > 0
+    fprintf("Ignoring %d inliers during bootstrapping, because their landmarks would have negative z coordinates\n", ...
+        nnz(~mask_in_sight));
+end
+
+Landmarks = X_hom(1:3,mask_in_sight);
+Keypoints = Inliers2(mask_in_sight,1:2)';           
+
 State.Keypoints = Keypoints;
 State.Landmarks = Landmarks;
 % These state entries are not calculated during bootstrapping
 State.CandidateKeypoints = [];
 State.InitCandidateKeypoints = [];
 State.InitCandidatePoses = [];
+State.LastKeyframePose = eye(3,4);
+
+fprintf("\nBOOTSTRAP COMPLETED: initialized with %d keypoints and %d corresponding landmarks\n", ...
+    size(State.Keypoints, 2), size(State.Landmarks,2));
 
 end

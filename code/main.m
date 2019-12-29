@@ -9,19 +9,14 @@ kitti_path = '../data/kitti/';
 
 global K PATCHRADIUS MATCHING_THRESHOLD MAGIC_KEYFRAME_THRESHOLD ...
     MAGIC_KEYFRAME_ANGLE_RAD COLOR_LANDMARK COLOR_CANDIDATE ...
-    COLOR_TRAJECTORY KEYFRAME_TRANSLATION PIX_TO_RAD FRAME_NUM FIRST_KEYFRAME TOT_TRANSLATION ...
-    KEYFRAME_THRESHOLD
-%PIX_TO_RAD     factor of pixel to degree assuming equal x,y foc lenght
+    COLOR_TRAJECTORY PIX_TO_RAD KEYFRAME_THRESHOLD
+
+% main config (PIX_TO_RAD and K set below, depending on dataset)
 KEYFRAME_THRESHOLD = 60;
-FIRST_KEYFRAME = 3;
-FRAME_NUM = 1;
-TOT_TRANSLATION=[0,0,0]';
-KEYFRAME_TRANSLATION = [0,0,0]';
 PATCHRADIUS = 10;
 MATCHING_THRESHOLD = 0.05;
 MAGIC_KEYFRAME_THRESHOLD = 0.15;
 MAGIC_KEYFRAME_ANGLE_RAD = deg2rad(5);
-
 COLOR_LANDMARK = 'red';
 COLOR_CANDIDATE = 'green';
 COLOR_TRAJECTORY = 'black';
@@ -62,6 +57,7 @@ end
 
 PIX_TO_RAD=atan(K(1,3)/(2*K(1,1)))/K(1,3);
 
+
 %% Bootstrap
 % need to set bootstrap_frames
 bootstrap_frames = [1 3]; % for kitti
@@ -92,15 +88,16 @@ initState = bootstrap(img0,img1);
 % prepare for continuos operation
 state = initState;
 
-trajectory = [0 0 0]; % x y z
-
 %% Continuous operation
 range = (bootstrap_frames(2)+1):last_frame;
+trajectory = zeros(last_frame, 3); % N * [x y z]
 % First previous image
 prevImage = img1;
 % visualization in figure 1 (all handled in loop)
 figure(1);
-
+set(gcf, 'Position',  [360, 500, 1200, 300]);
+subplot(1, 3, 3);
+scatter3(state.Landmarks(1, :), state.Landmarks(2,:), state.Landmarks(3,:), 1, COLOR_LANDMARK, 'filled');
 
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
@@ -118,38 +115,39 @@ for i = range
     end
     
     subplot(1, 3, [1 2]);
+    tmp = gcf;
+    l = tmp.CurrentAxes.get('xlabel').String;
     imshow(image);
+    xlabel(l);
     hold on;
     [state, pose] = processFrame(state, prevImage, image);
     hold off;
     title(sprintf('Keypoints frame %d', i));
-    [curOrientation,curLocation] = extrinsicsToCameraPose(pose(:,1:3),pose(:,4));
-    %t = -pose(:,4);
-%     newpoint = trajectory(end,:) + t';
-%     trajectory(end+1,:) = newpoint;
-    location(end+1,:)=location(end,:)+rotateframe(quaternion(orientation{end},'rotmat','frame'),curLocation);
-    orientation(end+1)={orientation{end}*curOrientation};
+    
+    trajectory(i,:) = pose(:,4)';
+    
+%     [curOrientation,curLocation] = extrinsicsToCameraPose(pose(:,1:3),pose(:,4));
+    
+%     curLocation
+    
+%     location(end+1,:)=location(end,:)+(C_tot*curLocation')';
+%     C_tot = C_tot * curOrientation;
+%     orientation(end+1)={orientation{end}*curOrientation};
     
     subplot(1, 3, 3);
     hold on;
-    plot3(location(end-1:end,1),location(end-1:end,2),location(end-1:end,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
-    %Uncoment below for landmarks plotting stops after a while to many landmarks or error in code i don't know
-    
-    %plotAdjust=rotateframe(quaternion(orientation{end},'rotmat','frame'),state.Landmarks');
-    %scatter3(location(end,1)+plotAdjust(:, 1), location(end,2)+plotAdjust(:, 2), location(end,3)+plotAdjust(:, 3), 5, COLOR_LANDMARK, 'filled');
+    scatter3(state.Landmarks(1,:), state.Landmarks(2,:), state.Landmarks(3,:), 1, COLOR_LANDMARK, 'filled');
+    plot3(trajectory(i-1:i,1),trajectory(i-1:i,2),trajectory(i-1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+    xlabel(sprintf("Estimated position (x,z): %2.1f %2.1f", pose(1,4), pose(3,4)));
     
     set(gcf, 'GraphicsSmoothing', 'on');
     view(0,0);
     axis equal;
     axis vis3d;
-    axis([location(end,1)-40 location(end,1)+40 -10 10 location(end,3)-40 location(end,3)+40]);
-    %axis([-150 150 -10 10 -1 400]);
+    axis([-250 250 -110 110 -50 200]);
     hold off;
     
-    % Makes sure that plots refresh.    
+    % Makes sure that plots refresh.
     pause(0.06);
     prevImage = image;
-    FRAME_NUM = FRAME_NUM+1;
-    
-    prev_pose=pose;
 end
