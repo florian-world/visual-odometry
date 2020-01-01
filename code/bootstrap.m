@@ -49,7 +49,7 @@ Inliers2_hom(3,:) = 1;
 
 % Triangulate points to create pointcloud
 M1 = K * eye(3,4);
-M2 = K * [R', -T];
+M2 = K * [R, T];
 X_hom = linearTriangulation(Inliers1_hom,Inliers2_hom,M1,M2); % Output of this is homogenous
 
 mask_in_sight = X_hom(3,:)>0; % ignore negative z values
