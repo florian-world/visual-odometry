@@ -99,8 +99,10 @@ set(gcf, 'Position',  [360, 500, 1200, 300]);
 subplot(1, 3, 3);
 scatter3(state.Landmarks(1, :), state.Landmarks(2,:), state.Landmarks(3,:), 1, COLOR_LANDMARK, 'filled');
 
+
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
+    fprintf('Ground truth: (%2.1f, %2.1f, %2.1f)\n', ground_truth(i,1),0,ground_truth(i,2));
     if ds == 0
         image = imread([kitti_path '/00/image_0/' sprintf('%06d.png',i)]);
     elseif ds == 1
@@ -137,17 +139,18 @@ for i = range
     subplot(1, 3, 3);
     hold on;
     scatter3(state.Landmarks(1,:), state.Landmarks(2,:), state.Landmarks(3,:), 1, COLOR_LANDMARK, 'filled');
-    plot3(trajectory(i-1:i,1),trajectory(i-1:i,2),trajectory(i-1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
-    xlabel(sprintf("Estimated position (x,z): %2.1f %2.1f", pose(1,4), pose(3,4)));
+    plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+    plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
+    xlabel(sprintf("Estimated position (x,z): %2.1f %2.1f (GT: %2.1f %2.1f)", pose(1,4), pose(3,4), ground_truth(i,1), ground_truth(i,2)));
     
     set(gcf, 'GraphicsSmoothing', 'on');
     view(0,0);
     axis equal;
     axis vis3d;
-    axis([-250 250 -110 110 -50 200]);
+    axis([[-50 50] + pose(1,4), -10 10, ([-20 80] + pose(3,4))]);
     hold off;
     
     % Makes sure that plots refresh.
-    pause(0.06);
+    pause(0.1);
     prevImage = image;
 end
