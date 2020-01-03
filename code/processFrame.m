@@ -68,7 +68,7 @@ Keypoints = KLTMatch2(:,1:2)';
 curPose = [R T];
 curState = prevState;
 
-fprintf("xz pos estimate: (%3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
+fprintf("Pos estimate: (%3.1f, %3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(2), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
 
 curState.Keypoints = Keypoints;
 curState.Landmarks = Landmarks;

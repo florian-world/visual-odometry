@@ -33,23 +33,27 @@ KLTMatch1 = corners1.Location(trackedPointsValidity,:);
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
 
 [F_KLT, inliersIdx] = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
-                              'RANSAC', 'NumTrials', 15000);
-                          
+                              'RANSAC', 'NumTrials', 1500);
+
 Inliers1 = KLTMatch1(inliersIdx,:);
-Inliers2 = KLTMatch1(inliersIdx,:);
-                 
+Inliers2 = KLTMatch2(inliersIdx,:);
+
+% figure(2);
+% showMatchedFeatures(Im1, Im2, Inliers1, Inliers2);
+% showMatchedFeatures(Im1, Im2, Inliers1, Inliers2, 'montage');
+
 % Recover essential matrix from F, then decompose into R,T
 E = K'*F_KLT*K;
 [Rots,u3] = decomposeEssentialMatrix(E);
-Inliers1_hom = flipud(Inliers1');
+Inliers1_hom = Inliers1';
 Inliers1_hom(3,:) = 1;
-Inliers2_hom = flipud(Inliers2');
+Inliers2_hom = Inliers2';
 Inliers2_hom(3,:) = 1;
 [R,T] = disambiguateRelativePose(Rots,u3,Inliers1_hom,Inliers2_hom,K,K);
 
 % Triangulate points to create pointcloud
-M1 = K * eye(3,4);
-M2 = K * [R, T];
+M1 = K*eye(3,4);
+M2 = K*[R, T];
 X_hom = linearTriangulation(Inliers1_hom,Inliers2_hom,M1,M2); % Output of this is homogenous
 
 mask_in_sight = X_hom(3,:)>0; % ignore negative z values
