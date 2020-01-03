@@ -140,22 +140,30 @@ if (isKeyFrame(curState, curPose))
 %             fprintf("and now in [%4.1f %4.1f] at pose:",selectedCandKPs(1,jj), selectedCandKPs(2,jj));
 %             curPose
             isSamePose = all(abs(candPose - curPose) <= eps,'all');
-            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*invPose(candPose),K*invPose(curPose));
+            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K'*invPose(candPose),K'*invPose(curPose));
             if (isSamePose)
                 fprintf("Trying to triangulate keyframe frome same pose, this should never happen\n"); 
             end
         end
+        %newLandmarks=-newLandmarks;
         % TODO this is not correct local z might be pointing in any direction
-        inSightMask = newLandmarks(3,:) > 0;
-        newLandmarks = newLandmarks(1:3, inSightMask);
+        %inSightMask = newLandmarks(3,:) > 0;
+        %newLandmarks = newLandmarks(1:3, inSightMask);
+        rotLandmarks=zeros(3,size(newLandmarks,2));
+        for l=1:size(newLandmarks,2)
+            rotLandmarks(:,l)=curPose(:,1:3)'*newLandmarks(1:3,l);
+        end
+         inSightMask = rotLandmarks(3,:) > curPose(3,4);
+         newLandmarks = newLandmarks(1:3, inSightMask);
+        
         %eliminate triangulated from candidate
         curState.InitCandidatePoses=curState.InitCandidatePoses(:,~candidateMask);
         curState.CandidateKeypoints=curState.CandidateKeypoints(:,~candidateMask);
         curState.InitCandidateKeypoints=curState.InitCandidateKeypoints(:,~candidateMask);
         curState.Landmarks=[curState.Landmarks,newLandmarks(1:3,:)];
         curState.Keypoints=[curState.Keypoints,selectedCandKPs(1:2,inSightMask)];
-        xlabel(sprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)", ...
-            size(newLandmarks,2), newLandmarks(1:3,end)));
+        %xlabel(sprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)", ...
+            %size(newLandmarks,2), newLandmarks(1:3,end)));
         
     end
 end
