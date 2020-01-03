@@ -122,24 +122,30 @@ end
 
 %keyframeDetected = true;
 % totRot=norm(rotationMatrixToVector(R));
-if (false) %isKeyFrame(curState, curPose))%size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD) || (totRot>0.03) && (size(prevState.Keypoints,2)<KEYFRAME_THRESHOLD*2.5)
+if (isKeyFrame(curState, curPose))
     curState.LastKeyframePose = curPose;
     curState.Keypoints = Keypoints;
-    [candidateMask, nvec] = triangNewKPoint(curState,R);
+    [candidateMask, ~] = triangNewKPoint(curState,R);
     if any(candidateMask)
         selectedCandKPs=curState.CandidateKeypoints(:,candidateMask);
         selectedCandInitKPs=curState.InitCandidateKeypoints(:,candidateMask);
         selectedCandInitPoses=curState.InitCandidatePoses(:,candidateMask);
-        nvec=nvec(:,candidateMask);
-        nvec(3,:)=1;
         selectedCandKPs(3,:) = 1;
         selectedCandInitKPs(3,:) = 1;
         newLandmarks=zeros(4,length(selectedCandInitPoses));
         for jj=1:size(selectedCandInitPoses,2)
             candPose=reshape(selectedCandInitPoses(:,jj),[3,4]);
-            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*candPose,K*curPose);
+%             fprintf("Triangulating new keypoint, first observed at [%4.1f %4.1f] with pose\n", selectedCandInitKPs(1,jj), selectedCandInitKPs(2,jj));
+%             candPose
+%             fprintf("and now in [%4.1f %4.1f] at pose:",selectedCandKPs(1,jj), selectedCandKPs(2,jj));
+%             curPose
+            isSamePose = all(abs(candPose - curPose) <= eps,'all');
+            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*invPose(candPose),K*invPose(curPose));
+            if (isSamePose)
+                fprintf("Trying to triangulate keyframe frome same pose, this should never happen\n"); 
+            end
         end
-        % TODO this is not correct z might be pointing in any direction
+        % TODO this is not correct local z might be pointing in any direction
         inSightMask = newLandmarks(3,:) > 0;
         newLandmarks = newLandmarks(1:3, inSightMask);
         %eliminate triangulated from candidate
@@ -150,6 +156,7 @@ if (false) %isKeyFrame(curState, curPose))%size(prevState.Keypoints,2)<KEYFRAME_
         curState.Keypoints=[curState.Keypoints,selectedCandKPs(1:2,inSightMask)];
         xlabel(sprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)", ...
             size(newLandmarks,2), newLandmarks(1:3,end)));
+        
     end
 end
 

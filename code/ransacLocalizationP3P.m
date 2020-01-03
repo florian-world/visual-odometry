@@ -7,7 +7,7 @@ function [R_C_W, t_C_W, best_inlier_mask, max_num_inliers_history, num_iteration
 %   matched keypoints (!!!), 0 if the match is an outlier, 1 otherwise.
 
 tweaked_for_more = true;
-adaptive = true; % whether or not to use ransac adaptively
+adaptive = false; % whether or not to use ransac adaptively
 
 if tweaked_for_more
     num_iterations = 1000;

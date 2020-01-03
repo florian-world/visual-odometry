@@ -33,7 +33,7 @@ KLTMatch1 = corners1.Location(trackedPointsValidity,:);
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
 
 [F_KLT, inliersIdx] = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
-                              'RANSAC', 'NumTrials', 1500);
+                              'RANSAC', 'NumTrials', 15000);
 
 Inliers1 = KLTMatch1(inliersIdx,:);
 Inliers2 = KLTMatch2(inliersIdx,:);
