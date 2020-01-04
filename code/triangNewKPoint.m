@@ -28,5 +28,6 @@ function [comp, nvec] =triangNewKPoint(curState,R)
     else
         [~,sI]=sort(distK);
         comp(sI<=minNewKeyPoints)=true;
+        comp(distK==0)=false;
     end
 end
