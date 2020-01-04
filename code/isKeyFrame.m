@@ -10,15 +10,7 @@ function isKF =isKeyFrame(curState, curPose)
 
     global MAGIC_KEYFRAME_THRESHOLD
     
-    pts_W = curState.Landmarks; % 3xK
-    pts_W(4,:) = 1;
-    
-    R_W_C = curPose(:,1:3);
-    t_W_C = curPose(:,4);
-    
-    Tf_C_W = [R_W_C', -t_W_C]; % maps pts from world to current camera frame
-    
-    pts_C = Tf_C_W * pts_W;
+    pts_C = getLandmarksInLocalFrame(curPose, curState.Landmarks);
     
     mask = pts_C(3,:)>0; % ignore negative z values
     
