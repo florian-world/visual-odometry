@@ -68,15 +68,28 @@ T = -T;
 
 Keypoints = KLTMatch2(:,1:2)';
 
-%% Track candidate keypoints
-
 curPose = [R T];
 curState = prevState;
 
 fprintf("Pos estimate: (%3.1f, %3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(2), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
 
+% Ignore out of sight landmarks...
+landmarksLocal = getLandmarksInLocalFrame(curPose, Landmarks);
+    
+mask = landmarksLocal(3,:)>0; % ignore negative z values
+
+if nnz(~mask) > 0
+    fprintf("Ignoring %d landmarks with now negative z coordinate \n", nnz(~mask));
+end
+
+Keypoints = Keypoints(:,mask);
+Landmarks = Landmarks(:,mask);
+
 curState.Keypoints = Keypoints;
 curState.Landmarks = Landmarks;
+
+
+%% Track candidate keypoints
 
 PointsNoMatch = trackedPoints(~trackedPointsValidity,:);
 % Remove any negative points from PointsNoMatch
@@ -126,7 +139,7 @@ end
 
 fprintf("Tracking %d candidates, +%d newly added.\n", size(curState.CandidateKeypoints,2), numberOfNewCandidates);
 
-xlabel(sprintf("%3d candidates, %3d landmarks", size(curState.Landmarks,2), size(curState.CandidateKeypoints,2)));
+xlabel(sprintf("%3d landmarks, %3d candidates ", size(curState.Landmarks,2), size(curState.CandidateKeypoints,2)));
 
 
 %% Keyframe detection and triangulation of new landmarks
