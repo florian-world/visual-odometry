@@ -125,7 +125,10 @@ end
 if (isKeyFrame(curState, curPose))
     curState.LastKeyframePose = curPose;
     curState.Keypoints = Keypoints;
-    [candidateMask, ~] = triangNewKPoint(curState,R);
+%     [candidateMask, ~] = triangNewKPoint(curState,R);
+    candidateMask = filterGoodCandidates(curState.InitCandidateKeypoints, ...
+        curState.CandidateKeypoints, curState.InitCandidatePoses, curPose);
+    
     if any(candidateMask)
         selectedCandKPs=curState.CandidateKeypoints(:,candidateMask);
         selectedCandInitKPs=curState.InitCandidateKeypoints(:,candidateMask);
@@ -140,7 +143,7 @@ if (isKeyFrame(curState, curPose))
 %             fprintf("and now in [%4.1f %4.1f] at pose:",selectedCandKPs(1,jj), selectedCandKPs(2,jj));
 %             curPose
             isSamePose = all(abs(candPose - curPose) <= eps,'all');
-            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K'*invPose(candPose),K'*invPose(curPose));
+            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*invPose(candPose),K*invPose(curPose));
             if (isSamePose)
                 fprintf("Trying to triangulate keyframe frome same pose, this should never happen\n"); 
             end
@@ -162,8 +165,8 @@ if (isKeyFrame(curState, curPose))
         curState.InitCandidateKeypoints=curState.InitCandidateKeypoints(:,~candidateMask);
         curState.Landmarks=[curState.Landmarks,newLandmarks(1:3,:)];
         curState.Keypoints=[curState.Keypoints,selectedCandKPs(1:2,inSightMask)];
-        %xlabel(sprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)", ...
-            %size(newLandmarks,2), newLandmarks(1:3,end)));
+        fprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)\n", ...
+            size(newLandmarks,2), newLandmarks(1:3,end));
         
     end
 end
