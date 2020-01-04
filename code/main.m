@@ -96,9 +96,11 @@ trajectory = zeros(last_frame, 3); % N * [x y z]
 prevImage = bootstrap_imgs{length(bootstrap_imgs)};
 % visualization in figure 1 (all handled in loop)
 figure(1);
-set(gcf, 'Position',  [360, 500, 1200, 300]);
-subplot(1, 3, 3);
-scatter3(state.Landmarks(1, :), state.Landmarks(2,:), state.Landmarks(3,:), 1, COLOR_LANDMARK, 'filled');
+set(gcf, 'Position',  [360, 500, 1200, 600]);
+
+
+HIST_SIZE = 20;
+numLandmarksHistory = zeros(1,HIST_SIZE);
 
 
 for i = range
@@ -117,7 +119,7 @@ for i = range
         assert(false);
     end
     
-    subplot(1, 3, [1 2]);
+    subplot(2, 3, [1 2]);
     tmp = gcf;
     l = tmp.CurrentAxes.get('xlabel').String;
     imshow(image);
@@ -137,19 +139,39 @@ for i = range
 %     C_tot = C_tot * curOrientation;
 %     orientation(end+1)={orientation{end}*curOrientation};
     
-    subplot(1, 3, 3);
+    subplot(2, 3, [3 6]);
+    scatter3(state.Landmarks(1,:), state.Landmarks(2,:), state.Landmarks(3,:), 3, COLOR_LANDMARK, 'filled');
     hold on;
-    scatter3(state.Landmarks(1,:), state.Landmarks(2,:), state.Landmarks(3,:), 1, COLOR_LANDMARK, 'filled');
-    plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
-    plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
-    xlabel(sprintf("Estimated position (x,z): %2.1f %2.1f (GT: %2.1f %2.1f)", pose(1,4), pose(3,4), ground_truth(i,1), ground_truth(i,2)));
+    plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2); 
+%     plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
+%     xlabel(sprintf("Estimated position (x,z): %2.1f %2.1f (GT: %2.1f %2.1f)", pose(1,4), pose(3,4), ground_truth(i,1), ground_truth(i,2)));
     
     set(gcf, 'GraphicsSmoothing', 'on');
     view(0,0);
     axis equal;
-    axis vis3d;
-    axis([[-50 50] + pose(1,4), -10 10, ([-20 80] + pose(3,4))]);
+%     axis vis3d;
+    axis([[-10 10] + pose(1,4), -10 10, ([-10 40] + pose(3,4))]);
     hold off;
+    
+    subplot(2,3,5);
+    plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+    title("Complete trajectory");
+    view(0,0);
+    axis equal;
+    axis([-300 400 -10 10 -10 700]);
+    
+    subplot(2,3,4);
+    set(gcf, 'GraphicsSmoothing', 'on');
+    frameNumHistory = (-HIST_SIZE+1):0;
+    numLandmarks = size(state.Landmarks, 2);
+    numLandmarksHistory = circshift(numLandmarksHistory,-1);
+    numLandmarksHistory(end) = numLandmarks;
+    
+    plot(frameNumHistory, numLandmarksHistory,'Color', "black", 'LineWidth', 1);
+    title("Number of landmarks in past 20 frames");
+    xlabel("frame number");
+    ylabel("number of landmarks");
+    ylim([0 round(max(numLandmarksHistory)+10,-1)]);
     
     % Makes sure that plots refresh.
     pause(0.1);

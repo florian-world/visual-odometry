@@ -54,6 +54,11 @@ Landmarks = prevState.Landmarks(:,trackedPointsValidity);
 % run p3p
 [R,T, inlierIdx] = ransacLocalizationP3P(KLTMatch2',Landmarks,K);
 
+
+if (numel(R) == 0)
+    error("Tracking lost!");
+end
+
 R = R';
 T = -T;
 
@@ -87,12 +92,15 @@ if isempty(prevState.CandidateKeypoints)
     curState.CandidateKeypoints = [PointsNoMatch' newDetectedCorners'];
     curState.InitCandidateKeypoints = [PointsNoMatch' newDetectedCorners'];
     curState.InitCandidatePoses = repmat(curPose(:),1,size(PointsNoMatch,1)+size(newDetectedCorners,1));
+    numberOfNewCandidates = size(PointsNoMatch,1) + size(newDetectedCorners, 1);
 else
     % Track candidate keypoints and update candidate list
     candPointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
     initialize(candPointTracker,prevState.CandidateKeypoints',prev_image);
     [trackedCandPoints,trackedCandPointsValidity] = candPointTracker(image);
     uniqueNewIdxs = findNewCandidates(PointsNoMatch,trackedCandPoints);
+    
+    numberOfNewCandidates = nnz(uniqueNewIdxs);
     
     % First only keep candidates that were succesfully tracked and update
     % non-init components
@@ -115,6 +123,10 @@ else
     curState.InitCandidateKeypoints = newInitCandidateKeypoints;
     curState.InitCandidatePoses = newInitCandidatePoses; %does this overwrite also init pose of all canditate or only the new?
 end
+
+fprintf("Tracking %d candidates, +%d newly added.\n", size(curState.CandidateKeypoints,2), numberOfNewCandidates);
+
+xlabel(sprintf("%3d candidates, %3d landmarks", size(curState.Landmarks,2), size(curState.CandidateKeypoints,2)));
 
 
 %% Keyframe detection and triangulation of new landmarks
