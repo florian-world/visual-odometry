@@ -60,30 +60,31 @@ PIX_TO_RAD=atan(K(1,3)/(2*K(1,1)))/K(1,3);
 
 %% Bootstrap
 % need to set bootstrap_frames
-bootstrap_frames = [1 3]; % for kitti
+bootstrap_frames = 1:3; % for kitti
+
+bootstrap_imgs = cell(length(bootstrap_frames));
 
 if ds == 0
-    img0 = imread([kitti_path '/00/image_0/' ...
-        sprintf('%06d.png',bootstrap_frames(1))]);
-    img1 = imread([kitti_path '/00/image_0/' ...
-        sprintf('%06d.png',bootstrap_frames(2))]);
+    for i = bootstrap_frames
+        bootstrap_imgs{i} = imread([kitti_path '/00/image_0/' ...
+        sprintf('%06d.png',bootstrap_frames(i))]);
+    end
 elseif ds == 1
-    img0 = rgb2gray(imread([malaga_path ...
+    for i = bootstrap_frames
+        bootstrap_imgs{i} = rgb2gray(imread([malaga_path ...
         '/malaga-urban-dataset-extract-07_rectified_800x600_Images/' ...
-        left_images(bootstrap_frames(1)).name]));
-    img1 = rgb2gray(imread([malaga_path ...
-        '/malaga-urban-dataset-extract-07_rectified_800x600_Images/' ...
-        left_images(bootstrap_frames(2)).name]));
+        left_images(bootstrap_frames(i)).name]));
+    end
 elseif ds == 2
-    img0 = rgb2gray(imread([parking_path ...
-        sprintf('/images/img_%05d.png',bootstrap_frames(1))]));
-    img1 = rgb2gray(imread([parking_path ...
-        sprintf('/images/img_%05d.png',bootstrap_frames(2))]));
+    for i = bootstrap_frames
+        bootstrap_imgs{i} = rgb2gray(imread([parking_path ...
+        sprintf('/images/img_%05d.png',bootstrap_frames(i))]));
+    end
 else
     assert(false);
 end
 
-initState = bootstrap(img0,img1);
+initState = bootstrap(bootstrap_imgs);
 
 % prepare for continuos operation
 state = initState;
@@ -92,7 +93,7 @@ state = initState;
 range = (bootstrap_frames(2)+1):last_frame;
 trajectory = zeros(last_frame, 3); % N * [x y z]
 % First previous image
-prevImage = img1;
+prevImage = bootstrap_imgs{length(bootstrap_imgs)};
 % visualization in figure 1 (all handled in loop)
 figure(1);
 set(gcf, 'Position',  [360, 500, 1200, 300]);

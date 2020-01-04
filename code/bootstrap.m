@@ -1,10 +1,9 @@
-function State = bootstrap(Im1,Im2)
+function State = bootstrap(Imgs)
 %BOOTSTRAP Takes two initial frames as input and returns the first state of
 %          the initialization to be used by the continuos VO pipeline. 
 %   
 %   Input:
-%       Im1:    First bootstrap frame
-%       Im2:    Second bootstrap frame
+%       Imgs: cell array of bootstrap images
 %
 %   Output:
 %       State:  Struct that describes the state containing following
@@ -17,20 +16,28 @@ function State = bootstrap(Im1,Im2)
 %                                         observation of candidate keypoints
 global K PATCHRADIUS
 
-imSize = size(Im1);
-height = imSize(1);
-width = imSize(2);
+assert(length(Imgs) >= 2);
+
+[height, width] = size(Imgs{1});
 % Detect corners on both frames
 roi = [PATCHRADIUS+1,PATCHRADIUS+1,width-(2*PATCHRADIUS),height-(2*PATCHRADIUS)];
-corners1 = detectHarrisFeatures(Im1,'ROI',roi);
+corners1 = detectHarrisFeatures(Imgs{1},'ROI',roi);
 
 % Point tracking using KLT
 pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
-initialize(pointTracker,corners1.Location,Im1);
+initialize(pointTracker,corners1.Location,Imgs{1});
 
-[trackedPoints,trackedPointsValidity] = pointTracker(Im2);
+[trackedPoints,trackedPointsValidity] = pointTracker(Imgs{2});
 KLTMatch1 = corners1.Location(trackedPointsValidity,:);
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
+
+for i = 3:length(Imgs)
+    pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
+    initialize(pointTracker,KLTMatch2,Imgs{i-1});
+    [trackedPoints,trackedPointsValidity] = pointTracker(Imgs{i});
+    KLTMatch1 = KLTMatch1(trackedPointsValidity,:);
+    KLTMatch2 = trackedPoints(trackedPointsValidity,:);
+end
 
 [F_KLT, inliersIdx] = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
                               'RANSAC', 'NumTrials', 15000);
