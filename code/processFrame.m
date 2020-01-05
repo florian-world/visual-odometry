@@ -46,21 +46,26 @@ Landmarks = prevState.Landmarks(:,trackedPointsValidity);
 if (numel(R) > 0)
     curPose = invPose([R T]);
 else
-
-%     error("Tracking lost!");
     fprintf("Tracking with P3P + landmarks lost, using fallback to relative pose estimation now\n");
     
-    % try using relative tracking for this frame...
-    KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
-    F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
+    % use all corners from previos frame to track and get the relative pose
+    prevCorners = detectHarrisFeatures(prev_image,'ROI',roi);
+    
+    relPointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
+    initialize(relPointTracker,prevCorners.Location,prev_image);
+
+    [relTrackedPoints,relTrackedPointsValidity] = relPointTracker(image);
+    relMatch1 = prevCorners.Location(relTrackedPointsValidity,:);
+    relMatch2 = relTrackedPoints(relTrackedPointsValidity,:);
+    F_KLT = estimateFundamentalMatrix(relMatch1, relMatch2, 'Method', ...
                                   'RANSAC', 'NumTrials', 15000);
 
     % Recover essential matrix from F, then decompose into R,T
     E = K'*F_KLT*K;
     [Rots,u3] = decomposeEssentialMatrix(E);
-    KLTMatch1(:,3)=1;
-    KLTMatch2(:,3)=1;
-    [Rrel,Trel] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
+    relMatch1(:,3)=1;
+    relMatch2(:,3)=1;
+    [Rrel,Trel] = disambiguateRelativePose(Rots,u3,relMatch1',relMatch2',K,K);
     
     relPose = invPose([Rrel, Trel]);
     relPose(4,4) = 1; % homogenize
