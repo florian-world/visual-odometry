@@ -35,22 +35,10 @@ newCorners = detectHarrisFeatures(image,'ROI',roi);
 pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
 initialize(pointTracker,prevState.Keypoints',prev_image);
 
-% size(prevState.Keypoints,2);
 [trackedPoints,trackedPointsValidity] = pointTracker(image);
-% KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
 KLTMatch2 = trackedPoints(trackedPointsValidity,:);
 Landmarks = prevState.Landmarks(:,trackedPointsValidity);
                           
-% F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
-%                               'RANSAC', 'NumTrials', 2000);
-%                  
-% % Recover essential matrix from F, then decompose into R,T
-% E = K'*F_KLT*K;
-% [Rots,u3] = decomposeEssentialMatrix(E);
-% KLTMatch1(:,3)=1;
-% KLTMatch2(:,3)=1;
-% [R,T] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
-
 % run p3p
 [R,T, inlierIdx] = ransacLocalizationP3P(KLTMatch2',Landmarks,K);
 
@@ -59,16 +47,13 @@ if (numel(R) == 0)
     error("Tracking lost!");
 end
 
-R = R';
-T = -T;
-
 % equivalent matlab call:
 % [R, T,inlierIdx] = estimateWorldCameraPose(double(KLTMatch2),Landmarks',cameraParameters("IntrinsicMatrix", K'), "MaxNumTrials", 2000);
 % T = T';
 
 Keypoints = KLTMatch2(:,1:2)';
 
-curPose = [R T];
+curPose = invPose([R T]);
 curState = prevState;
 
 fprintf("Pos estimate: (%3.1f, %3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(2), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
@@ -139,7 +124,7 @@ end
 
 fprintf("Tracking %d candidates, +%d newly added.\n", size(curState.CandidateKeypoints,2), numberOfNewCandidates);
 
-xlabel(sprintf("%3d landmarks, %3d candidates ", size(curState.Landmarks,2), size(curState.CandidateKeypoints,2)));
+xlabel(sprintf("%3d landmarks, %3d candidates, %3.1f%% inliers", size(curState.Landmarks,2), size(curState.CandidateKeypoints,2), nnz(inlierIdx)/length(inlierIdx)*100));
 
 
 %% Keyframe detection and triangulation of new landmarks
@@ -147,7 +132,7 @@ xlabel(sprintf("%3d landmarks, %3d candidates ", size(curState.Landmarks,2), siz
 
 %keyframeDetected = true;
 % totRot=norm(rotationMatrixToVector(R));
-if (isKeyFrame(curState, curPose))
+if (true) %isKeyFrame(curState, curPose))
     curState.LastKeyframePose = curPose;
     curState.Keypoints = Keypoints;
 %     [candidateMask, ~] = triangNewKPoint(curState,R);
@@ -181,8 +166,8 @@ if (isKeyFrame(curState, curPose))
         for l=1:size(newLandmarks,2)
             rotLandmarks(:,l)=curPose(:,1:3)'*newLandmarks(1:3,l);
         end
-         inSightMask = rotLandmarks(3,:) > curPose(3,4);
-         newLandmarks = newLandmarks(1:3, inSightMask);
+        inSightMask = rotLandmarks(3,:) > curPose(3,4);
+        newLandmarks = newLandmarks(1:3, inSightMask);
         
         %eliminate triangulated from candidate
         curState.InitCandidatePoses=curState.InitCandidatePoses(:,~candidateMask);
