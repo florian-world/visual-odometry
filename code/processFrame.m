@@ -33,11 +33,21 @@ newCorners = detectHarrisFeatures(image,'ROI',roi);
 
 % KLT
 pointTracker = vision.PointTracker('MaxBidirectionalError',1); % Set to Inf for speedup
-initialize(pointTracker,prevState.Keypoints',prev_image);
 
-[trackedPoints,trackedPointsValidity] = pointTracker(image);
-KLTMatch2 = trackedPoints(trackedPointsValidity,:);
-Landmarks = prevState.Landmarks(:,trackedPointsValidity);
+if size(prevState.Keypoints,2) > 0
+    initialize(pointTracker,prevState.Keypoints',prev_image);
+
+    [trackedPoints,trackedPointsValidity] = pointTracker(image);
+    KLTMatch2 = trackedPoints(trackedPointsValidity,:);
+    Landmarks = prevState.Landmarks(:,trackedPointsValidity);
+else
+    trackedPoints = zeros(0,2);
+    trackedPointsValidity = true(0);
+    KLTMatch2 = zeros(0,2);
+    Landmarks = zeros(3,0);
+end
+
+
                           
 % run p3p
 [R,T, inlierIdx] = ransacLocalizationP3P(KLTMatch2',Landmarks,K);
