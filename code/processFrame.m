@@ -204,8 +204,13 @@ if (isKeyFrame(curState, curPose) || size(curState.Landmarks,2)<150 )
         curState.InitCandidateKeypoints=curState.InitCandidateKeypoints(:,~candidateMask);
         curState.Landmarks=[curState.Landmarks,newLandmarks(1:3,:)];
         curState.Keypoints=[curState.Keypoints,selectedCandKPs(1:2,inSightMask)];
-        fprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)\n", ...
-            size(newLandmarks,2), newLandmarks(1:3,end));
+        
+        if size(newLandmarks,2) > 0
+            fprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)\n", ...
+                size(newLandmarks,2), newLandmarks(1:3,end));
+        else
+            fprintf("No landmarks added in this keyframe\n");
+        end
     end
 end
 

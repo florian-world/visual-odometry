@@ -159,7 +159,6 @@ for i = range
     view(0,0);
     axis equal;
     axis([-300 400 -10 10 -10 700]);
-    87
     subplot(2,3,4);
     set(gcf, 'GraphicsSmoothing', 'on');
     frameNumHistory = (-HIST_SIZE+1):0;
