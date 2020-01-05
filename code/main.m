@@ -156,11 +156,21 @@ for i = range
     subplot(2,3,5);
     plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
 %     plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
-    title("Complete trajectory");
+    title("Full trajectory");
     view(0,0);
     axis equal;
+    grid on;
 %     axis([-300 400 -10 10 -10 700]);
-    axis([-20 80 -10 10 -10 100]);
+%     axis([-20 80 -10 10 -10 100]);
+    if (diff(xlim) > diff(zlim))
+        m = mean(zlim);
+        d = diff(xlim);
+        axis([xlim -d/2 d/2 (m - d/2) (m + d/2)]);
+    else
+        m = mean(xlim);
+        d = diff(zlim);
+        axis([(m - d/2) (m + d/2) -d/2 d/2 zlim]);
+    end
     subplot(2,3,4);
     set(gcf, 'GraphicsSmoothing', 'on');
     frameNumHistory = (-HIST_SIZE+1):0;
@@ -175,6 +185,6 @@ for i = range
     ylim([0 round(max(numLandmarksHistory)+10,-1)]);
     
     % Makes sure that plots refresh.
-    pause(0.01);
+    pause(0.05);
     prevImage = image;
 end
