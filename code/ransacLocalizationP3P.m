@@ -15,7 +15,7 @@ else
     num_iterations = 200;
 end
 
-pixel_tolerance = 10;
+pixel_tolerance = 8;
 k = 3;
 
 if adaptive
@@ -101,7 +101,7 @@ while num_iterations > i
         outlier_ratio = 1 - max_num_inliers / numel(is_inlier);
         % formula to compute number of iterations from estimated outlier
         % ratio
-        confidence = 0.95;
+        confidence = 0.99;
         upper_bound_on_outlier_ratio = 0.90;
         outlier_ratio = min(upper_bound_on_outlier_ratio, outlier_ratio);
         num_iterations = log(1-confidence)/log(1-(1-outlier_ratio)^k);

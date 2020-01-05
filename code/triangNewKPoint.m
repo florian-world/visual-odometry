@@ -1,7 +1,7 @@
 function [comp, nvec] =triangNewKPoint(curState,R)
     %Determine valid candidates and returns a mask
     global MAGIC_KEYFRAME_ANGLE_RAD
-    minNewKeyPoints=50;
+    minNewKeyPoints=100;
     le=length(curState.CandidateKeypoints);
     comp=false(1,le);
     nvec=zeros(3,le);
