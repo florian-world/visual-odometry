@@ -22,6 +22,12 @@ if adaptive
     num_iterations = inf;
 end
 
+if size(corresponding_landmarks,2) < k
+    R_C_W = [];
+    t_C_W = [];
+    return;
+end
+
 % Initialize RANSAC.
 best_inlier_mask = zeros(1, size(matched_query_keypoints, 2));
 % (row, col) to (u, v)
