@@ -15,7 +15,7 @@ global K PATCHRADIUS MATCHING_THRESHOLD MAGIC_KEYFRAME_THRESHOLD ...
 KEYFRAME_THRESHOLD = 60;
 PATCHRADIUS = 10;
 MATCHING_THRESHOLD = 0.05;
-MAGIC_KEYFRAME_THRESHOLD = 0.15;
+MAGIC_KEYFRAME_THRESHOLD = 0.14;
 MAGIC_KEYFRAME_ANGLE_RAD = deg2rad(4);
 COLOR_LANDMARK = 'red';
 COLOR_CANDIDATE = 'green';
@@ -159,7 +159,7 @@ for i = range
     view(0,0);
     axis equal;
     axis([-300 400 -10 10 -10 700]);
-    
+    87
     subplot(2,3,4);
     set(gcf, 'GraphicsSmoothing', 'on');
     frameNumHistory = (-HIST_SIZE+1):0;

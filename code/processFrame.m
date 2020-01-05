@@ -132,7 +132,7 @@ xlabel(sprintf("%3d landmarks, %3d candidates, %3.1f%% inliers", size(curState.L
 
 %keyframeDetected = true;
 % totRot=norm(rotationMatrixToVector(R));
-if (isKeyFrame(curState, curPose))
+if (isKeyFrame(curState, curPose) || size(curState.Landmarks,2)<150 )
     curState.LastKeyframePose = curPose;
     curState.Keypoints = Keypoints;
 %     [candidateMask, ~] = triangNewKPoint(curState,R);
