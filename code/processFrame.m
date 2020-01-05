@@ -43,8 +43,29 @@ Landmarks = prevState.Landmarks(:,trackedPointsValidity);
 [R,T, inlierIdx] = ransacLocalizationP3P(KLTMatch2',Landmarks,K);
 
 
-if (numel(R) == 0)
-    error("Tracking lost!");
+if (numel(R) > 0)
+    curPose = invPose([R T]);
+else
+
+%     error("Tracking lost!");
+    fprintf("Tracking with P3P + landmarks lost, using fallback to relative pose estimation now\n");
+    
+    % try using relative tracking for this frame...
+    KLTMatch1 = prevState.Keypoints(:,trackedPointsValidity)';
+    F_KLT = estimateFundamentalMatrix(KLTMatch1, KLTMatch2, 'Method', ...
+                                  'RANSAC', 'NumTrials', 15000);
+
+    % Recover essential matrix from F, then decompose into R,T
+    E = K'*F_KLT*K;
+    [Rots,u3] = decomposeEssentialMatrix(E);
+    KLTMatch1(:,3)=1;
+    KLTMatch2(:,3)=1;
+    [Rrel,Trel] = disambiguateRelativePose(Rots,u3,KLTMatch1',KLTMatch2',K,K);
+    
+    relPose = invPose([Rrel, Trel]);
+    relPose(4,4) = 1; % homogenize
+    
+    curPose = prevState.LastPose * relPose;
 end
 
 % equivalent matlab call:
@@ -52,8 +73,6 @@ end
 % T = T';
 
 Keypoints = KLTMatch2(:,1:2)';
-
-curPose = invPose([R T]);
 curState = prevState;
 
 R = curPose(:,1:3);
@@ -231,6 +250,10 @@ global COLOR_CANDIDATE COLOR_LANDMARK
 scatter(Keypoints(1, :), Keypoints(2, :), 60, COLOR_LANDMARK, 'x', 'LineWidth', 3);
 scatter(curState.CandidateKeypoints(1, :), curState.CandidateKeypoints(2, :), 10, COLOR_CANDIDATE, 'filled');
 
+
+%% Some asserts and saving previous pose
+
+curState.LastPose = curPose;
 
 s1 = size(curState.CandidateKeypoints,2);
 s2 = size(curState.InitCandidateKeypoints,2);

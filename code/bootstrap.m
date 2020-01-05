@@ -80,6 +80,7 @@ State.CandidateKeypoints = [];
 State.InitCandidateKeypoints = [];
 State.InitCandidatePoses = [];
 State.LastKeyframePose = eye(3,4);
+State.LastPose = eye(3,4);
 
 fprintf("\nBOOTSTRAP COMPLETED: initialized with %d keypoints and %d corresponding landmarks\n", ...
     size(State.Keypoints, 2), size(State.Landmarks,2));
