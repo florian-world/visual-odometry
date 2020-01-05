@@ -162,15 +162,15 @@ for i = range
     grid on;
 %     axis([-300 400 -10 10 -10 700]);
 %     axis([-20 80 -10 10 -10 100]);
-    if (diff(xlim) > diff(zlim))
-        m = mean(zlim);
-        d = diff(xlim);
-        axis([xlim -d/2 d/2 (m - d/2) (m + d/2)]);
-    else
-        m = mean(xlim);
-        d = diff(zlim);
-        axis([(m - d/2) (m + d/2) -d/2 d/2 zlim]);
-    end
+
+    % Square center plot
+    extx = [min(trajectory(1:i,1)) max(trajectory(1:i,1))];
+    extz = [min(trajectory(1:i,3)) max(trajectory(1:i,3))];
+    mx = median(extx);
+    mz = median(extz);
+    d = max([diff(extx) diff(extz)]) + 10;
+    axis([(mx-d/2) (mx+d/2) -d/2 d/2 (mz-d/2) (mz+d/2)]);
+
     subplot(2,3,4);
     set(gcf, 'GraphicsSmoothing', 'on');
     frameNumHistory = (-HIST_SIZE+1):0;
