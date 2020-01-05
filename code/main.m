@@ -174,6 +174,6 @@ for i = range
     ylim([0 round(max(numLandmarksHistory)+10,-1)]);
     
     % Makes sure that plots refresh.
-    pause(0.1);
+    pause(0.01);
     prevImage = image;
 end

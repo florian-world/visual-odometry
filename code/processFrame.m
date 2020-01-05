@@ -56,6 +56,9 @@ Keypoints = KLTMatch2(:,1:2)';
 curPose = invPose([R T]);
 curState = prevState;
 
+R = curPose(:,1:3);
+T = curPose(:,4);
+
 fprintf("Pos estimate: (%3.1f, %3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(2), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
 
 % Ignore out of sight landmarks...
@@ -145,29 +148,55 @@ if (isKeyFrame(curState, curPose))
         selectedCandInitPoses=curState.InitCandidatePoses(:,candidateMask);
         selectedCandKPs(3,:) = 1;
         selectedCandInitKPs(3,:) = 1;
-        newLandmarks=zeros(4,length(selectedCandInitPoses));
+        newLandmarks=zeros(4,size(selectedCandInitPoses,2));
         for jj=1:size(selectedCandInitPoses,2)
             candPose=reshape(selectedCandInitPoses(:,jj),[3,4]);
 %             fprintf("Triangulating new keypoint, first observed at [%4.1f %4.1f] with pose\n", selectedCandInitKPs(1,jj), selectedCandInitKPs(2,jj));
 %             candPose
 %             fprintf("and now in [%4.1f %4.1f] at pose:",selectedCandKPs(1,jj), selectedCandKPs(2,jj));
 %             curPose
-            isSamePose = all(abs(candPose - curPose) <= eps,'all');
+            
             newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*invPose(candPose),K*invPose(curPose));
-            if (isSamePose)
-                fprintf("Trying to triangulate keyframe frome same pose, this should never happen\n"); 
-            end
+            isSamePose = all(abs(candPose - curPose) <= eps,'all');
+            assert(~isSamePose, "Trying to triangulate keyframe frome same pose, this should never happen\n");
         end
         %newLandmarks=-newLandmarks;
         % TODO this is not correct local z might be pointing in any direction
         %inSightMask = newLandmarks(3,:) > 0;
         %newLandmarks = newLandmarks(1:3, inSightMask);
-        rotLandmarks=zeros(3,size(newLandmarks,2));
-        for l=1:size(newLandmarks,2)
-            rotLandmarks(:,l)=curPose(:,1:3)'*newLandmarks(1:3,l);
-        end
-        inSightMask = rotLandmarks(3,:) > curPose(3,4);
+%         rotLandmarks=zeros(3,size(newLandmarks,2));
+%         for l=1:size(newLandmarks,2)
+%             rotLandmarks(:,l)=curPose(:,1:3)*newLandmarks(1:3,l);
+%         end
+        newLandmarksLocal = getLandmarksInLocalFrame(curPose,newLandmarks);
+        inSightMask = newLandmarksLocal(3,:) > 0;
+        
+        fprintf("Ignoring %d candidate landmarks which are not in sight\n", nnz(~inSightMask));
+%         newLandmarks = newLandmarks(1:3, inSightMask);
+        
+%       % FOR REFERENCE: this is how it was decided to use the localization with all new keypoints:
+%
+%         [Rnew,Tnew, inlierIdxNew] = ransacLocalizationP3P(selectedCandKPs(1:2,inSightMask),newLandmarks(1:3,:),K);
+%         fprintf("Newly localization from selected candidate keypoints yielded [%2.1f %2.1f %2.1f] with %2.1f%% inliers\n", -Rnew'*Tnew, nnz(inlierIdxNew)/length(inlierIdxNew)*100);
+%         
+%         [Rnew,Tnew, inlierIdxNewNew] = ransacLocalizationP3P([curState.Keypoints,selectedCandKPs(1:2,inSightMask)],[curState.Landmarks,newLandmarks(1:3,:)],K);
+%         s1 = size(curState.Keypoints, 2);
+%         s2 = size(selectedCandKPs(1:2,inSightMask), 2);
+%         tmpMask = [repmat(false, 1, s1), repmat(true,1,s2)];
+%         relNumInlier = nnz(inlierIdxNewNew & tmpMask);
+%         fprintf("Newly localization with all new keypoints yielded [%2.1f %2.1f %2.1f] with %2.1f%% inliers, and %2.1f%% on the new candidates.\n", -Rnew'*Tnew, nnz(inlierIdxNewNew)/length(inlierIdxNewNew)*100, relNumInlier/s2*100);
+        
+        
+        [~,~, newInlierMask] = ransacLocalizationP3P([curState.Keypoints,selectedCandKPs(1:2,:)],[curState.Landmarks,newLandmarks(1:3,:)],K);
+        s1 = size(curState.Keypoints, 2);
+        newInliers = newInlierMask((s1+1):end);
+        
+        fprintf("Only keeping %d out of %d candidate landmarks being inliers on newly RANSAC p3p localization\n", nnz(newInliers), length(newInliers));
+        
+        inSightMask = inSightMask & newInliers;
         newLandmarks = newLandmarks(1:3, inSightMask);
+%         relNumInlier = nnz(inlierIdxNewNew & tmpMask);
+%         fprintf("Newly localization with all new keypoints yielded [%2.1f %2.1f %2.1f] with %2.1f%% inliers, and %2.1f%% on the new candidates.\n", -Rnew'*Tnew, nnz(inlierIdxNewNew)/length(inlierIdxNewNew)*100, relNumInlier/s2*100);
         
         %eliminate triangulated from candidate
         curState.InitCandidatePoses=curState.InitCandidatePoses(:,~candidateMask);
@@ -177,7 +206,6 @@ if (isKeyFrame(curState, curPose))
         curState.Keypoints=[curState.Keypoints,selectedCandKPs(1:2,inSightMask)];
         fprintf("%d landmarks added, pos of last new landmark: (%.2f, %.2f, %.2f)\n", ...
             size(newLandmarks,2), newLandmarks(1:3,end));
-        
     end
 end
 
@@ -186,5 +214,19 @@ end
 global COLOR_CANDIDATE COLOR_LANDMARK
 scatter(Keypoints(1, :), Keypoints(2, :), 60, COLOR_LANDMARK, 'x', 'LineWidth', 3);
 scatter(curState.CandidateKeypoints(1, :), curState.CandidateKeypoints(2, :), 10, COLOR_CANDIDATE, 'filled');
+
+
+s1 = size(curState.CandidateKeypoints,2);
+s2 = size(curState.InitCandidateKeypoints,2);
+s3 = size(curState.InitCandidatePoses,2);
+
+assert(s1 == s2);
+assert(s1 == s3);
+
+s1 = size(curState.Landmarks,2);
+s2 = size(curState.Keypoints,2);
+
+assert(s1 == s2);
+
 
 end

@@ -10,7 +10,7 @@ tweaked_for_more = true;
 adaptive = false; % whether or not to use ransac adaptively
 
 if tweaked_for_more
-    num_iterations = 2500;
+    num_iterations = 1000;
 else
     num_iterations = 200;
 end
