@@ -61,13 +61,13 @@ T = curPose(:,4);
 
 fprintf("Pos estimate: (%3.1f, %3.1f, %3.1f)       localized with %.1f%% inliers in %d keypoints\n", T(1), T(2), T(3), nnz(inlierIdx)/length(inlierIdx)*100, length(inlierIdx));
 
-% Ignore out of sight landmarks...
+% Remove out of sight landmarks...
 landmarksLocal = getLandmarksInLocalFrame(curPose, Landmarks);
     
-mask = landmarksLocal(3,:)>0; % ignore negative z values
+mask = landmarksLocal(3,:)>0; % ignore z values which the camera cannot observe
 
 if nnz(~mask) > 0
-    fprintf("Ignoring %d landmarks with now negative z coordinate \n", nnz(~mask));
+    fprintf("Removing %d landmarks with now negative local z coordinate \n", nnz(~mask));
 end
 
 Keypoints = Keypoints(:,mask);
@@ -148,7 +148,7 @@ if (isKeyFrame(curState, curPose) || size(curState.Landmarks,2)<150 )
         selectedCandInitPoses=curState.InitCandidatePoses(:,candidateMask);
         selectedCandKPs(3,:) = 1;
         selectedCandInitKPs(3,:) = 1;
-        newLandmarks=zeros(4,size(selectedCandInitPoses,2));
+        newLandmarks=zeros(3,size(selectedCandInitPoses,2));
         for jj=1:size(selectedCandInitPoses,2)
             candPose=reshape(selectedCandInitPoses(:,jj),[3,4]);
 %             fprintf("Triangulating new keypoint, first observed at [%4.1f %4.1f] with pose\n", selectedCandInitKPs(1,jj), selectedCandInitKPs(2,jj));
@@ -156,7 +156,19 @@ if (isKeyFrame(curState, curPose) || size(curState.Landmarks,2)<150 )
 %             fprintf("and now in [%4.1f %4.1f] at pose:",selectedCandKPs(1,jj), selectedCandKPs(2,jj));
 %             curPose
             
-            newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*invPose(candPose),K*invPose(curPose));
+%             newLandmarks(:,jj)=linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),K*invPose(candPose),K*invPose(curPose));
+            
+            % We may also triangulate in a relative way as done in
+            % bootstrapping and then transform back to world frame
+            Tr1_CW = invPose(candPose);
+            Tr2_WC = curPose;
+            Tr2_WC(4,4) = 1; % homogenize
+            Tr12_CC = invPose(Tr1_CW * Tr2_WC);
+            M1 = K * eye(3,4);
+            M2 = K * Tr12_CC;
+            
+            newLandmarks(:,jj) = candPose * linearTriangulation(selectedCandInitKPs(:,jj),selectedCandKPs(:,jj),M1,M2);
+            
             isSamePose = all(abs(candPose - curPose) <= eps,'all');
             assert(~isSamePose, "Trying to triangulate keyframe frome same pose, this should never happen\n");
         end
@@ -191,12 +203,11 @@ if (isKeyFrame(curState, curPose) || size(curState.Landmarks,2)<150 )
         s1 = size(curState.Keypoints, 2);
         newInliers = newInlierMask((s1+1):end);
         
-        fprintf("Only keeping %d out of %d candidate landmarks being inliers on newly RANSAC p3p localization\n", nnz(newInliers), length(newInliers));
+        fprintf("Only keeping %d out of %d candidate landmarks being inliers on newly RANSAC p3p localization\n",...
+            nnz(newInliers), length(newInliers));
         
         inSightMask = inSightMask & newInliers;
         newLandmarks = newLandmarks(1:3, inSightMask);
-%         relNumInlier = nnz(inlierIdxNewNew & tmpMask);
-%         fprintf("Newly localization with all new keypoints yielded [%2.1f %2.1f %2.1f] with %2.1f%% inliers, and %2.1f%% on the new candidates.\n", -Rnew'*Tnew, nnz(inlierIdxNewNew)/length(inlierIdxNewNew)*100, relNumInlier/s2*100);
         
         %eliminate triangulated from candidate
         curState.InitCandidatePoses=curState.InitCandidatePoses(:,~candidateMask);

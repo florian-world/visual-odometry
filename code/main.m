@@ -144,7 +144,7 @@ for i = range
     hold on;
     plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2); 
 %     plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
-%     xlabel(sprintf("Estimated position (x,z): %2.1f %2.1f (GT: %2.1f %2.1f)", pose(1,4), pose(3,4), ground_truth(i,1), ground_truth(i,2)));
+    xlabel(sprintf("Estimated position: (%2.1f, %2.1f)", pose(1,4), pose(3,4)));
     
     set(gcf, 'GraphicsSmoothing', 'on');
     view(0,0);
@@ -155,10 +155,12 @@ for i = range
     
     subplot(2,3,5);
     plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+%     plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
     title("Complete trajectory");
     view(0,0);
     axis equal;
-    axis([-300 400 -10 10 -10 700]);
+%     axis([-300 400 -10 10 -10 700]);
+    axis([-20 80 -10 10 -10 100]);
     subplot(2,3,4);
     set(gcf, 'GraphicsSmoothing', 'on');
     frameNumHistory = (-HIST_SIZE+1):0;
