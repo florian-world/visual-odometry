@@ -25,6 +25,9 @@ end
 if size(corresponding_landmarks,2) < k
     R_C_W = [];
     t_C_W = [];
+    best_inlier_mask = [];
+    max_num_inliers_history = [];
+    num_iteration_history = [];
     return;
 end
 
