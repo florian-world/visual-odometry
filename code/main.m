@@ -140,9 +140,9 @@ for i = range
 %     orientation(end+1)={orientation{end}*curOrientation};
     
     subplot(2, 3, [3 6]);
-    scatter3(state.Landmarks(1,:), state.Landmarks(2,:), state.Landmarks(3,:), 3, COLOR_LANDMARK, 'filled');
+    scatter3(state.Landmarks(1,:), zeros(1,size(state.Landmarks(1,:),2)), state.Landmarks(3,:), 3, COLOR_LANDMARK, 'filled');
     hold on;
-    plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2); 
+    plot3(trajectory(1:i,1),zeros(i,1),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2); 
 %     plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
     xlabel(sprintf("Estimated position: (%2.1f, %2.1f)", pose(1,4), pose(3,4)));
     
@@ -154,7 +154,8 @@ for i = range
     hold off;
     
     subplot(2,3,5);
-    plot3(trajectory(1:i,1),trajectory(1:i,2),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
+    % force y to be zero...
+    plot3(trajectory(1:i,1),zeros(i,1),trajectory(1:i,3), 'Color', COLOR_TRAJECTORY, 'LineWidth', 2);
 %     plot3(ground_truth(1:i,1),zeros(i,1),ground_truth(1:i,2), 'Color', COLOR_TRAJECTORY, 'LineWidth', 1, 'LineStyle', '--');
     title("Full trajectory");
     view(0,0);
