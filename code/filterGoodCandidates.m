@@ -2,7 +2,7 @@ function [candidateMask] = filterGoodCandidates(initCandidateKPs, curCandidateKP
 %FILTERGOODCANDIDATES Filters candidates satisfying the angle condition
 %   Detailed explanation goes here
 
-global MAGIC_KEYFRAME_ANGLE_RAD
+global MAGIC_KEYFRAME_ANGLE_RAD K
 
 curR = curPose(:,1:3);
 
@@ -25,9 +25,15 @@ for i=1:N
     v1_hom = [initKP(1) initKP(2) 1]';
     v2_hom = [curKP(1) curKP(2) 1]';
     
+    v1_norm = K \ v1_hom;
+    v2_norm = K \ v2_hom;
+    
+    v1_norm(3) = 1;
+    v2_norm(3) = 1;
+    
     % rotate back to world frame and check angle
-    v1_W = initR * v1_hom;
-    v2_W = curR * v2_hom;
+    v1_W = initR * v1_norm;
+    v2_W = curR * v2_norm;
     
     % angle btw. two vectors see https://www.mathworks.com/matlabcentral/answers/16243-angle-between-two-vectors-in-3d
     angle = atan2(norm(cross(v1_W,v2_W)), dot(v1_W,v2_W));
